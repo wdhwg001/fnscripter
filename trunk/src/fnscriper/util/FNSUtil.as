@@ -1,6 +1,7 @@
 package fnscriper.util
 {
 	import flash.filters.DropShadowFilter;
+	import flash.text.TextFormat;
 	
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSVO;
@@ -104,6 +105,27 @@ package fnscriper.util
 			var l:Number = Math.sqrt(x * x + y * y);
 			var r:Number = Math.atan2(y,x) / Math.PI * 180;
 			return [new DropShadowFilter(l,r,0,0.5,0,0,255)];
+		}
+		
+		public static function createTextFormat(o:Object):TextFormat
+		{
+			var tf:TextFormat = new TextFormat();
+			for (var p:String in o)
+				tf[p] = o[p];
+			return tf;
+		}
+		
+		public static function readNumber(s:String,startIndex:int):String
+		{
+			var result:String = "";
+			var ch:String = s.charAt(startIndex);
+			while (startIndex < s.length && (ch >= "0" && ch <= "9" || ch == "."))
+			{
+				result += s.charAt(startIndex);
+				startIndex++;
+				ch = s.charAt(startIndex);
+			}
+			return result;
 		}
 	}
 }

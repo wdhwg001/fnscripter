@@ -265,5 +265,20 @@ package fnscriper.command
 			model.setVar(wField,v.width);
 			model.setVar(hField,v.height);
 		}
+		
+		public function repaint():void
+		{
+			view.loadFromVO();
+		}
+		
+		public function allsphide():void
+		{
+			view.spCanvas.visible = false;
+		}
+		
+		public function allspresume():void
+		{
+			view.spCanvas.visible = true;
+		}
 	}
 }

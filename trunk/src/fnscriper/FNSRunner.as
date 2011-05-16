@@ -120,6 +120,7 @@ package fnscriper
 		
 		public function setData(v:String):void
 		{
+			v = v.replace(/\/\r?\n/,"");
 			data = v.split(/\r?\n/);
 			initData();
 		}

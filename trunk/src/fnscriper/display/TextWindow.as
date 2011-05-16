@@ -11,16 +11,17 @@ package fnscriper.display
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
 	import flash.utils.Timer;
+	import flash.utils.clearTimeout;
+	import flash.utils.setTimeout;
 	
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSRunner;
+	import fnscriper.FNSVO;
 	import fnscriper.events.TickEvent;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
 	import fnscriper.util.Tick;
 	
-	import org.osmf.events.TimeEvent;
-
 	public class TextWindow extends Sprite
 	{
 		public var textField:TextField;
@@ -29,14 +30,22 @@ package fnscriper.display
 		
 		public var background:Image;
 		
-		public var speed:int;
+		public var historyText:Array = [];
+		public var historyIndex:int = -1;
 		
-		private var historyText:Array = [];
-		private var historyIndex:int = -1;
+		/**
+		 * 下面的文字为新页 
+		 */
+		private var isNewPage:Boolean;
 		
 		public function get facade():FNSFacade
 		{
 			return FNSFacade.instance;
+		}
+		
+		public function get model():FNSVO
+		{
+			return FNSFacade.instance.model;
 		}
 		
 		public function TextWindow()
@@ -105,13 +114,13 @@ package fnscriper.display
 		
 		public function showHistory(isDown:Boolean = false):void
 		{
-			if (historyText.length <= 1)
+			if (historyText.length <= 1 || selectedMode)
 				return;
 			
 			if (!isDown)
 			{
 				if (historyIndex == -1)
-					historyIndex = historyText.length - 2;
+					historyIndex = historyText.length - 2;//进入回顾
 				else
 					historyIndex--;
 			}
@@ -122,12 +131,20 @@ package fnscriper.display
 			}
 			
 			if (historyIndex > historyText.length - 1)
-				historyIndex = historyText.length - 1
+				historyIndex = historyText.length - 1;
 			
 			if (historyIndex < 0)
 				historyIndex = 0;
 			
-			showText(historyText[historyIndex],true);
+			if (historyIndex == historyText.length - 1)
+			{
+				historyIndex = -1;//取消回顾
+				showText(historyText[historyText.length - 1]);
+			}
+			else
+			{
+				showText(historyText[historyIndex]);
+			}
 		}
 		
 		protected function tickHandler(event:TickEvent):void
@@ -170,10 +187,33 @@ package fnscriper.display
 			if (!visible || !enabled)
 				return;
 			
+			if (waitTimer)
+				clearTimeout(waitTimer);
+			
+			if (isNewPage)
+			{
+				isNewPage = false;
+				textField.text = "";
+			}
+			
 			if (!selectedMode)
 			{
-				facade.runner.isWait = false;
-				facade.runner.doNext();
+				if (tweenTimer)
+				{
+					tweenToEnd();
+				}
+				else
+				{
+					if (tweenIndex < text.length)
+					{
+						tween();
+					}
+					else
+					{
+						facade.runner.isWait = false;
+						facade.runner.doNext();
+					}
+				}
 			}
 		}
 		
@@ -189,7 +229,7 @@ package fnscriper.display
 			textField.defaultTextFormat = tf;
 			textField.filters = FNSUtil.getTextFilter(data.shadow);
 			
-			this.speed = data.speed;
+			facade.model.textspeed = data.speed;
 			this.setSkin(data.skin,data.wx,data.wy,data.wr,data.wb);
 		}
 		
@@ -225,52 +265,112 @@ package fnscriper.display
 			selectedMode = true;
 		}
 		
-		public function showText(v:String,isHistory:Boolean = false):void
+		public function showText(v:String):void
 		{
 			textField.embedFonts = facade.model.embedFonts;
-			textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,null,isHistory ? 0xFFFF00 : facade.model.defaultcolor);
 			text = v;
+			
+			textField.text = "";
+			tweenIndex = 0;
+			
 			tween();
 		}
 		
 		private var tweenTimer:Timer;
 		private var text:String;
 		private var tweenIndex:int;
+		private var waitTimer:int;
 		public function tween():void
 		{
 			stopTween();
 			
-			textField.text = "";
-			
-			var sp:int = speed ? speed : facade.model.defaultspeed[1];
+			var sp:int = facade.model.textspeed;
 			if (historyIndex != -1 || facade.runner.isSkip || selectedMode)
 				sp = 0;
 			
 			if (sp)
 			{
-				tweenTimer = new Timer(speed ? speed : facade.model.defaultspeed[1],text.length)
+				tweenTimer = new Timer(sp,int.MAX_VALUE)
 				tweenTimer.addEventListener(TimerEvent.TIMER,tweenUpdateHandler);
-				tweenTimer.addEventListener(TimerEvent.TIMER_COMPLETE,tweenCompleteHandler);
 				tweenTimer.start();
 			}
 			else
 			{
-				for (var i:int = 0;i < text.length;i++)
-					tweenUpdateHandler();
+				tweenToEnd();
 			}
 		}
 		
-		private function tweenUpdateHandler(e:TimeEvent = null):void
+		public function tweenToEnd():void
 		{
-			var a:String = text.charAt(tweenIndex);
-			textField.appendText(a);
-			
-			tweenIndex++;
+			while (tweenIndex < text.length)
+				tweenUpdateHandler();
 		}
 		
-		private function tweenCompleteHandler(e:TimeEvent):void
+		private function tweenUpdateHandler(e:TimerEvent = null):void
 		{
-			stopTween();
+			var a:String = text.charAt(tweenIndex);
+			if (a == "&")
+			{
+				model.defaultcolor = 0;
+				tweenIndex++;
+			}
+			else if (a == "#")
+			{
+				s = text.slice(tweenIndex + 1,tweenIndex + 7);
+				model.defaultcolor = parseInt(s,16);
+				tweenIndex += s.length + 1;
+			}
+			else if (text.slice(tweenIndex,tweenIndex + 2) == "!s")
+			{
+				var s:String = FNSUtil.readNumber(text,tweenIndex + 2);
+				model.textspeed = int(s);
+				if (tweenTimer)
+					tweenTimer.delay = model.textspeed;
+				tweenIndex += s.length + 2;
+			}
+			else if (text.slice(tweenIndex,tweenIndex + 2) == "!w")
+			{
+				s = FNSUtil.readNumber(text,tweenIndex + 2);
+				tweenIndex += s.length + 2;
+				if (!facade.runner.isSkip)
+				{
+					stopTween();
+					this.enabled = false;
+					setTimeout(function ():void{enabled = true;next()},int(s));
+				}
+			}
+			else if (text.slice(tweenIndex,tweenIndex + 2) == "!d")
+			{
+				s = FNSUtil.readNumber(text,tweenIndex + 2);
+				tweenIndex += s.length + 2;
+				if (!facade.runner.isSkip)
+				{
+					stopTween();
+					setTimeout(next,int(s));
+				}
+			}
+			else if (a == "@")
+			{
+				tweenIndex++;
+				if (!facade.runner.isSkip)
+					stopTween();
+			}
+			else if (a == "\\")
+			{
+				tweenIndex++;
+				isNewPage = true;
+				if (!facade.runner.isSkip)
+					stopTween();
+			}
+			else
+			{
+				textField.appendText(a);
+				textField.setTextFormat(new TextFormat(model.defaultfont,null,historyIndex != -1 ? 0xFFFF00 : model.defaultcolor),textField.text.length - 1,textField.text.length);
+				tweenIndex++;
+			}
+			
+			if (tweenIndex >= text.length)
+				stopTween();
 		}
 		
 		public function stopTween():void
@@ -278,7 +378,6 @@ package fnscriper.display
 			if (tweenTimer)
 			{
 				tweenTimer.removeEventListener(TimerEvent.TIMER,tweenUpdateHandler);
-				tweenTimer.removeEventListener(TimerEvent.TIMER_COMPLETE,tweenCompleteHandler);
 				tweenTimer.stop();
 				
 				tweenTimer = null;

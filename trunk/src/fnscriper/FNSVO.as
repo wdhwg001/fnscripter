@@ -76,6 +76,16 @@ package fnscriper
 		public var bgm:String = "";
 		
 		/**
+		 * 背景音乐重复
+		 */
+		public var bgmloops:int = int.MAX_VALUE;
+		
+		/**
+		 * 点击音效
+		 */
+		public var clickvoice:Array = ["",""]
+		
+		/**
 		 * 按钮定义
 		 */
 		public var btn:Object = {};
@@ -113,7 +123,12 @@ package fnscriper
 		/**
 		 * 默认速度
 		 */
-		public var defaultspeed:Array;
+		public var defaultspeed:Array = [10,5,1];
+		
+		/**
+		 * 文字速度
+		 */
+		public var textspeed:int = 5;
 		
 		/**
 		 * 透明方式 leftup,copy,alpha

@@ -17,7 +17,15 @@ package fnscriper.command
 		public function bgm(url:String):void
 		{
 			model.bgm = url;
-			view.bgm(url);
+			model.bgmloops = int.MAX_VALUE;
+			view.bgm(url,model.bgmloops);
+		}
+		
+		public function bgmonce(url:String):void
+		{
+			model.bgm = url;
+			model.bgmloops = 1;
+			view.bgm(url,model.bgmloops);
 		}
 		
 		public function bgmstop():void
@@ -34,6 +42,11 @@ package fnscriper.command
 		public function dwavestop(index:int):void
 		{
 			view.dwavestop(index);
+		}
+		
+		public function clickvoice(v1:String,v2:String):void
+		{
+			model.clickvoice = [v1,v2];
 		}
 	}
 }

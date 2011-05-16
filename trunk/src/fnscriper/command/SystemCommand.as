@@ -113,5 +113,16 @@ package fnscriper.command
 			{
 			}
 		}
+		
+		public function lookbackflush():void
+		{
+			view.textWindow.historyIndex = -1;
+			view.textWindow.showText(view.textWindow.historyText[view.textWindow.historyText.length - 1]);
+		}
+		
+		public function skipoff():void
+		{
+			runner.isSkip = false;
+		}
 	}
 }

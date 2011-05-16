@@ -220,7 +220,7 @@ package fnscriper
 				loadBtndef(model.btndef);
 			
 			if (model.bgm)
-				bgm(model.bgm);
+				bgm(model.bgm,model.bgmloops);
 			
 			facade.model.step--;
 			facade.runner.isWait = false;
@@ -308,14 +308,14 @@ package fnscriper
 				dwavestop(index);
 		}
 		
-		public function bgm(url:String):void
+		public function bgm(url:String,loops:int):void
 		{
 			bgmstop();
 			
 			var sound:Sound = new Sound(facade.asset.getURLRequest(url),new SoundLoaderContext(1000));
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			bgmSound = sound;
-			bgmChannel = sound.play(0,int.MAX_VALUE);
+			bgmChannel = sound.play(0,loops);
 		}
 		
 		public function bgmstop():void

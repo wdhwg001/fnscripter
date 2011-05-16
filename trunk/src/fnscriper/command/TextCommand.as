@@ -7,6 +7,12 @@ package fnscriper.command
 		public function defaultspeed(low:int,middle:int,high:int):void
 		{
 			model.defaultspeed = [low,middle,high];
+			model.textspeed = middle;
+		}
+		
+		public function textspeed(s:int):void
+		{
+			model.textspeed = s;
 		}
 		
 		public function defaultfont(v:String):void
