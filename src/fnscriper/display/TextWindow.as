@@ -5,10 +5,12 @@ package fnscriper.display
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
+	import flash.events.TimerEvent;
 	import flash.filters.DropShadowFilter;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
+	import flash.utils.Timer;
 	
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSRunner;
@@ -16,6 +18,8 @@ package fnscriper.display
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
 	import fnscriper.util.Tick;
+	
+	import org.osmf.events.TimeEvent;
 
 	public class TextWindow extends Sprite
 	{
@@ -59,6 +63,8 @@ package fnscriper.display
 			
 			historyText = [];
 			historyIndex = -1;
+			
+			stopTween();
 		}
 		 
 		private function init(e:Event):void
@@ -213,17 +219,70 @@ package fnscriper.display
 			showText(v);
 		}
 		
-		public function showText(v:String,isHistory:Boolean = false):void
-		{
-			textField.embedFonts = facade.model.embedFonts;
-			textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,null,isHistory ? 0xFFFF00 : facade.model.defaultcolor);
-			textField.text = v;
-		}
-		
 		public function select(list:Array):void
 		{
 			putText(list.join("\n"));
 			selectedMode = true;
+		}
+		
+		public function showText(v:String,isHistory:Boolean = false):void
+		{
+			textField.embedFonts = facade.model.embedFonts;
+			textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,null,isHistory ? 0xFFFF00 : facade.model.defaultcolor);
+			text = v;
+			tween();
+		}
+		
+		private var tweenTimer:Timer;
+		private var text:String;
+		private var tweenIndex:int;
+		public function tween():void
+		{
+			stopTween();
+			
+			textField.text = "";
+			
+			var sp:int = speed ? speed : facade.model.defaultspeed[1];
+			if (historyIndex != -1 || facade.runner.isSkip || selectedMode)
+				sp = 0;
+			
+			if (sp)
+			{
+				tweenTimer = new Timer(speed ? speed : facade.model.defaultspeed[1],text.length)
+				tweenTimer.addEventListener(TimerEvent.TIMER,tweenUpdateHandler);
+				tweenTimer.addEventListener(TimerEvent.TIMER_COMPLETE,tweenCompleteHandler);
+				tweenTimer.start();
+			}
+			else
+			{
+				for (var i:int = 0;i < text.length;i++)
+					tweenUpdateHandler();
+			}
+		}
+		
+		private function tweenUpdateHandler(e:TimeEvent = null):void
+		{
+			var a:String = text.charAt(tweenIndex);
+			textField.appendText(a);
+			
+			tweenIndex++;
+		}
+		
+		private function tweenCompleteHandler(e:TimeEvent):void
+		{
+			stopTween();
+		}
+		
+		public function stopTween():void
+		{
+			if (tweenTimer)
+			{
+				tweenTimer.removeEventListener(TimerEvent.TIMER,tweenUpdateHandler);
+				tweenTimer.removeEventListener(TimerEvent.TIMER_COMPLETE,tweenCompleteHandler);
+				tweenTimer.stop();
+				
+				tweenTimer = null;
+			}
 		}
 	}
 }
