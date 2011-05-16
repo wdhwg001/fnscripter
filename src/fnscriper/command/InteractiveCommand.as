@@ -6,18 +6,20 @@ package fnscriper.command
 	import flash.utils.setTimeout;
 	
 	import fnscriper.display.Image;
+	import fnscriper.events.TickEvent;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
+	import fnscriper.util.Tick;
 
 	public class InteractiveCommand extends CommandBase
 	{
-		public function wait(v:String):void
+		public function wait(v:int):void
 		{
 			if (runner.isSkip)
 				return;
 			
 			this.runner.isWait = true;
-			setTimeout(completeHandler,int(model.getVar(v)));
+			setTimeout(completeHandler,v);
 			
 			function completeHandler():void
 			{
@@ -26,7 +28,17 @@ package fnscriper.command
 			}
 		}
 		
+		public function delay(v:int):void
+		{
+			autoclick(v);
+		}
+		
 		public function click():void
+		{
+			autoclick(0);
+		}
+		
+		public function autoclick(t:int):void
 		{
 			if (runner.isSkip)
 				return;
@@ -34,12 +46,35 @@ package fnscriper.command
 			this.runner.isWait = true;
 			view.addViewHandler(completeHandler);
 			
-			function completeHandler(e:ViewEvent):void
+			if (t)
+				setTimeout(completeHandler,t);
+			
+			function completeHandler(e:ViewEvent = null):void
 			{
 				view.removeViewHandler(completeHandler);
 				
 				runner.isWait = false;
 				runner.doNext();
+			}
+		}
+		
+		public function spwait(v:String):void
+		{
+			this.runner.isWait = true;
+			var image:Image = view.getsp(v);
+			Tick.instance.addEventListener(TickEvent.TICK,tickHandler);
+			
+			var oldCell:int = image.cellIndex;
+			function tickHandler(e:TickEvent):void
+			{
+				if (image.cellIndex < oldCell || image.cellIndex >= image.animLength - 1)
+				{
+					Tick.instance.removeEventListener(TickEvent.TICK,tickHandler);
+					
+					runner.isWait = false;
+					runner.doNext();
+				}
+				oldCell = image.cellIndex;
 			}
 		}
 		
