@@ -6,6 +6,7 @@ package fnscriper
 	import flash.display.InteractiveObject;
 	import flash.display.Loader;
 	import flash.display.Sprite;
+	import flash.display.StageScaleMode;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
@@ -29,6 +30,8 @@ package fnscriper
 	import fnscriper.display.TextWindow;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
+	
+	import org.osmf.layout.ScaleMode;
 	
 	[Event(name="view_click", type="fnscriper.events.ViewEvent")]
 	public class FNSView extends Sprite
