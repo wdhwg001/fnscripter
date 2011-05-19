@@ -6,13 +6,31 @@ package fnscriper
 	import flash.net.registerClassAlias;
 	import flash.utils.ByteArray;
 	import flash.utils.getDefinitionByName;
+	
+	import flashx.textLayout.elements.BreakElement;
 
 	public class FNSVO
 	{
 		/**
-		 * 变量
+		 * 字符串变量
 		 */
-		public var vars:Object = {};
+		public var strs:Object = {};
+		/**
+		 * 数值变量
+		 */
+		public var nums:Object = {};
+		/**
+		 * 数组变量
+		 */
+		public var arrays:Object = {};
+		/**
+		 * 变量最小范围
+		 */
+		public var intlimitmin:Object = {};
+		/**
+		 * 变量最大范围
+		 */
+		public var intlimitmax:Object = {};
 		/**
 		 * 当前位标
 		 */
@@ -34,6 +52,8 @@ package fnscriper
 		 * 循环堆参数
 		 */
 		public var forLayerParam:Array = [];
+		
+		
 		/**
 		 * 字体 
 		 */
@@ -68,7 +88,7 @@ package fnscriper
 		/**
 		 * 图片
 		 */
-		public var sp:Object = {};
+		public var sp:Object = {};//{url:url,x:x,y:y,alpha:100,visible:1};
 		
 		/**
 		 * 背景音乐
@@ -80,6 +100,10 @@ package fnscriper
 		 */
 		public var bgmloops:int = int.MAX_VALUE;
 		
+		public var dwaveloop:Object = {};
+		
+		public var dwaveload:Object = {};
+		
 		/**
 		 * 点击音效
 		 */
@@ -88,7 +112,12 @@ package fnscriper
 		/**
 		 * 按钮定义
 		 */
-		public var btn:Object = {};
+		public var btn:Object = {};//{x:x,y:y,w:int,h:int,ox:int,oy:int};或者图片id
+		
+		/**
+		 * 快速显示图片 
+		 */
+		public var blt:Object = {};//{x:x,y:y,w:w,h:h,sx:sx,sy:sy,sw:sw,sh:sh};显示区域左上角x坐标,y坐标,显示区域宽,高,预载图像截取左上角x坐标,y坐标,截取部分宽,高
 		
 		/**
 		 * 按钮预载图片
@@ -108,7 +137,8 @@ package fnscriper
 		/**
 		 * 文本框参数 
 		 */
-		public var textwindow:Object = {};
+		public var textwindow:Object = {};//{tx:tx,ty:ty,tw:tw,th:th,fw:fw,fh:fh,fg:fg,lg:lg,speed:speed,bold:bold,shadow:shadow,skin:skin,wx:wx,wy:wy,wr:wr,wb:wb}
+											//头文字左上角x坐标,y坐标,每行字数,行数,字宽,字高,字间距,行间距,单字显示速度毫秒数,粗体状态,阴影状态,窗体颜色,窗体左上角x坐标,y坐标,右下角x坐标,y坐标;
 		
 		/**
 		 * 指定选项文字的颜色
@@ -121,9 +151,19 @@ package fnscriper
 		public var selectvoice:Array = ["",""]; 
 		
 		/**
+		 * 自动等待文本
+		 */
+		public var clickstr:String = "";
+		
+		/**
 		 * 默认速度
 		 */
 		public var defaultspeed:Array = [10,5,1];
+		
+		/**
+		 * 选择的默认速度（用!sd设置）
+		 */
+		public var defaultspeedIndex:int = 1;
 		
 		/**
 		 * 文字速度
@@ -138,7 +178,7 @@ package fnscriper
 		/**
 		 * 人物站立图片底端坐标  
 		 */
-		public var underline:int;
+		public var underline:int = 479;
 		
 		/**
 		 * 使文字框与站立图位于同一遮挡顺位 
@@ -150,43 +190,193 @@ package fnscriper
 		 */
 		public var humanz:int = 500;
 		
-		public function getVar(v:Object):Object
-		{
-			if (vars.hasOwnProperty(v))
-				return vars[v];
-			else
-				return v;
-		}
+		/**
+		 * 是否允许保存
+		 */
+		public var saveon:Boolean = true;
+		
+		/**
+		 * 内部计时
+		 */
+		public var timer:int;
+		
+		/**
+		 * 效果定义
+		 */
+		public var effect:Object = {};
+		
+		/**
+		 * 效果定义长度
+		 */
+		public var effectlen:Object = {};
+		/**
+		 * 效果定义图片
+		 */
+		public var effectimg:Object = {};
+		
+		/**
+		 * 效果延迟时间
+		 */
+		public var effectblank:int;
+		
+		/**
+		 * 单色效果
+		 */
+		public var monocro:String = "";
+		
+		/**
+		 * 反色效果 1:先于单色,2,后于单色
+		 */
+		public var nega:int;
 		
 		public function setVar(key:String,v:Object):void
 		{
-			vars[key] = v;
+			var type:String = key.charAt(0);
+			var index:int;
+			switch (type)
+			{
+				case "%":
+					index = int(key.slice(1));
+					if (intlimitmin.hasOwnProperty(index) && v < intlimitmin[index])
+						v = intlimitmin[index];
+					
+					if (intlimitmax.hasOwnProperty(index) && v > intlimitmax[index])
+						v = intlimitmax[index];
+					
+					nums[index] = v;
+					break;
+				case "$":
+					index = int(key.slice(1));
+					strs[index] = v;
+					break;
+				case "?":
+					var arr:Array = key.slice(1).split(/[\[\]]+/);
+					if (arr[arr.length - 1] == "")
+						arr.pop();
+					var result:Object = arrays;
+					do
+					{
+						index = arr.shift();
+						if (arr.length == 0)
+						{
+							result[index] = v;
+						}
+						else 
+						{
+							if (!result.hasOwnProperty(index) || result[index] is Number)
+								result[index] = {};
+							result = result[index];
+						}
+					}
+					while (arr.length > 0)
+					break;
+			}
+		}
+		
+		public function getVar(key:String):Object
+		{
+			var type:String = key.charAt(0);
+			var index:int;
+			switch (type)
+			{
+				case "%":
+					index = int(key.slice(1));
+					return nums[index];
+				case "$":
+					index = int(key.slice(1));
+					return strs[index];
+				case "?":
+					var arr:Array = key.slice(1).split(/[\[\]]+/);
+					if (arr[arr.length - 1] == "")
+						arr.pop();
+					var result:Object = arrays;
+					do
+					{
+						result = result[arr.shift()];
+					}
+					while (arr.length > 0)
+					return result;
+			}
+			return key;
+		}
+		
+		public function getNumVar(key:String):int
+		{
+			return int(getVar(key));
 		}
 		
 		public function getByteArray():ByteArray
 		{
 			var bytes:ByteArray = new ByteArray();
 			bytes.writeObject(this);
+			bytes.compress();
 			return bytes;
 		}
 		
 		public function createFromByteArray(bytes:ByteArray):void
 		{
 			bytes.position = 0;
+			try
+			{
+				bytes.uncompress();
+			} 
+			catch(error:Error) 
+			{}
 			var obj:Object = bytes.readObject();
+			
 			for (var p:String in obj)
-				this[p] = obj[p];
+			{
+//				if (p == "nums" || p == "strs" || p == "arrays")
+//				{
+//					for (var p2:String in obj.vars)
+//					{
+//						if (int(p2) < 200 || obj[p][p2])
+//							this[p][p2] = obj[p][p2];
+//					}
+//				}
+//				else
+				{
+					this[p] = obj[p];
+				}
+			}
+			
 		}
 		
 		public function clear():void
 		{
+			var p:String;
+			for (p in nums)
+			{
+				if (int(p) < 200)
+					delete nums[int(p)];
+			}
+			for (p in strs)
+			{
+				if (int(p) < 200)
+					delete strs[int(p)];
+			}
+			for (p in arrays)
+			{
+				if (int(p) < 200)
+					delete arrays[int(p)];
+			}
+			
 			sp = {};
 			bg = "";
 			
 			btndef = "";
 			btn = {};
+			blt = null;
 			
 			bgm = "";
+			bgmloops = uint.MAX_VALUE;
+			dwaveload = {};
+			dwaveloop = {};
+			
+			effect = {};
+			effectlen = {};
+			monocro = "";
+			nega = 0;
 		}
 		
 	}

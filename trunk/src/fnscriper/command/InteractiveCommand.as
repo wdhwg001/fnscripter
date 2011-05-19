@@ -13,6 +13,10 @@ package fnscriper.command
 
 	public class InteractiveCommand extends CommandBase
 	{
+		public function waittimer(v:int):void
+		{
+			wait(v);
+		}
 		public function wait(v:int):void
 		{
 			if (runner.isSkip)
@@ -62,14 +66,14 @@ package fnscriper.command
 		{
 			this.runner.isWait = true;
 			var image:Image = view.getsp(v);
-			Tick.instance.addEventListener(TickEvent.TICK,tickHandler);
+			image.addEventListener(Event.ENTER_FRAME,tickHandler);
 			
 			var oldCell:int = image.cellIndex;
-			function tickHandler(e:TickEvent):void
+			function tickHandler(e:Event):void
 			{
 				if (image.cellIndex < oldCell || image.cellIndex >= image.animLength - 1)
 				{
-					Tick.instance.removeEventListener(TickEvent.TICK,tickHandler);
+					image.removeEventListener(Event.ENTER_FRAME,tickHandler);
 					
 					runner.isWait = false;
 					runner.doNext();
@@ -77,95 +81,5 @@ package fnscriper.command
 				oldCell = image.cellIndex;
 			}
 		}
-		
-		[CMD(paramTypes="S")]
-		public function btnwait(v:String,isClear:Boolean = true):void
-		{
-			this.runner.isWait = true;
-			view.addViewHandler(completeHandler);
-			
-			function completeHandler(e:ViewEvent):void
-			{
-				if (e.btnIndex == -1 || !runner.isWait)
-					return;
-				
-				view.removeViewHandler(completeHandler);
-				
-				model.setVar(v,e.btnIndex);
-				if (isClear)
-					btnclear();
-				
-				runner.isWait = false;
-				runner.doNext();
-			}
-		}
-		
-		[CMD(paramTypes="S")]
-		public function btnwait2(v:String):void
-		{
-			btnwait(v,false);
-		}
-		
-		/**
-		 * 加载缓存按钮图片 
-		 * @param v
-		 * 
-		 */
-		public function btndef(v:String):void
-		{
-			btnclear();
-			if (v != "clear")
-			{
-				model.btndef = v;
-				view.loadBtndef(v);
-			}
-		}
-		
-		public function btnclear():void
-		{
-			model.btndef = "";
-			model.btn = {};
-			view.btnclear();
-		}
-		
-		public function btn(bnIndex:String,x:int,y:int,w:int,h:int,ox:int,oy:int):void
-		{
-			model.btn[bnIndex] = {x:x,y:y,w:int,h:int,ox:int,oy:int};
-			view.addBtn(bnIndex,x,y,w,h,ox,oy)
-		}
-		
-		public function spbtn(index:String,bnIndex:String):void
-		{
-			model.btn[bnIndex] = index;
-			view.addSpBtn(bnIndex,index);
-		}
-		
-		public function select(...reg):void
-		{
-			runner.isWait = true;
-			
-			var textList:Array = [];
-			var gotoList:Array = [];
-			for (var i:int = 0;i < reg.length;i += 2)
-			{
-				textList.push(reg[i]);
-				gotoList.push(reg[i + 1]);
-			}
-			view.textWindow.select(textList);
-			view.addViewHandler(completeHandler);
-			
-			function completeHandler(e:ViewEvent):void
-			{
-				if (e.btnIndex == -1 || !runner.isWait)
-					return;
-				
-				view.removeViewHandler(completeHandler);
-				
-				runner.runCommand("goto",[gotoList[e.btnIndex]]);
-				runner.isWait = false;
-				runner.doNext();
-			}
-		}
-		
 	}
 }

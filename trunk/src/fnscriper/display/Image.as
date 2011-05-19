@@ -5,6 +5,7 @@ package fnscriper.display
 	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
+	import flash.external.ExternalInterface;
 	import flash.filters.ColorMatrixFilter;
 	import flash.filters.DropShadowFilter;
 	import flash.geom.Matrix;
@@ -12,6 +13,7 @@ package fnscriper.display
 	import flash.geom.Rectangle;
 	import flash.net.URLRequest;
 	import flash.sensors.Accelerometer;
+	import flash.system.Security;
 	import flash.text.TextField;
 	import flash.text.TextFieldAutoSize;
 	import flash.text.TextFormat;
@@ -19,9 +21,12 @@ package fnscriper.display
 	import flash.utils.ByteArray;
 	import flash.utils.Timer;
 	
+	import flashx.textLayout.elements.BreakElement;
+	
 	import fnscriper.FNSAsset;
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSVO;
+	import fnscriper.FNSView;
 	import fnscriper.events.TickEvent;
 	import fnscriper.util.FNSUtil;
 	import fnscriper.util.Tick;
@@ -30,6 +35,7 @@ package fnscriper.display
 
 	public class Image extends Bitmap
 	{
+		public var id:String;
 		public var url:String;
 		/**
 		 * 透明方式：
@@ -45,6 +51,11 @@ package fnscriper.display
 		public var animLength:int = 1;
 		public var animFrameTime:int;
 		private var _animMode:int = 3;
+		
+		public function get view():FNSView
+		{
+			return FNSFacade.instance.view;
+		}
 
 		/**
 		 * 1 -播放一次；2 -循环播放；3 -不播放 
@@ -71,7 +82,7 @@ package fnscriper.display
 		public var color:uint;
 		public var color2:uint;
 		
-		private var _cellIndex:int = -1;
+		private var _cellIndex:int;
 
 		public var bitmapDataSource:Array;
 		
@@ -133,7 +144,8 @@ package fnscriper.display
 		
 		public function get mouseOver():Boolean
 		{
-			return this.mouseX >= 0 && this.mouseX < this.width && this.mouseY > 0 && this.mouseY < this.height;
+			return view.screenbm.mouseX - this.x >= 0 && view.screenbm.mouseX - this.x < this.width && 
+				view.screenbm.mouseY - this.y > 0 && view.screenbm.mouseY - this.y < this.height;
 		}
 		
 		public function get cellIndex():int
@@ -143,18 +155,21 @@ package fnscriper.display
 		
 		public function set cellIndex(value:int):void
 		{
-			_cellIndex = value;
-			
 			if (this.bitmapDataSource)
 				this.bitmapData = this.bitmapDataSource[value > bitmapDataSource.length - 1 ? bitmapDataSource.length - 1 : value];
 			else
 				this.bitmapData = null;
+			
+			if (_cellIndex == value)
+				return;
+				
+			_cellIndex = value;
+			view.invalidateRender();
 		}
 					
 		public function Image()
 		{
-			super(null,"auto",true);
-			
+			super();
 			this.transparenceMode = FNSFacade.instance.model.transmode.charAt(0);
 		}
 		
@@ -180,16 +195,29 @@ package fnscriper.display
 			if (!v)
 				return;
 			
-			loader = new Loader();
-			loader.load(FNSFacade.instance.asset.getURLRequest(v));
-			loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loadCompleteHandler);
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadCompleteHandler);
+			if (v.charAt(0) == "#")
+			{
+				var bmd:BitmapData = new BitmapData(FNSFacade.instance.view.contentWidth,FNSFacade.instance.view.contentHeight,false,parseInt(v.slice(1),16));
+				loadBitmapData(bmd);
+				autoLayout();
+			}
+			else
+			{
+				_cellIndex = -1;
+				
+				loader = new Loader();
+				loader.load(FNSFacade.instance.asset.getURLRequest(v));
+				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loadCompleteHandler);
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadCompleteHandler);
+			}
 		}
 		
 		public function loadBytes(bytes:ByteArray):void
 		{
 			this.haltLoad();
 			this.disposeBitmapDataSource();
+			
+			_cellIndex = -1;
 			
 			loader = new Loader();
 			loader.loadBytes(bytes);
@@ -222,6 +250,7 @@ package fnscriper.display
 			loader = null;
 			
 			this.cellIndex = 0;
+			this.autoLayout();
 		}
 		
 		public function loadText():void
@@ -243,8 +272,8 @@ package fnscriper.display
 				bmd.draw(textField);
 				this.bitmapDataSource[i] = bmd;
 			}
-			
 			this.cellIndex = 0;
+			this.autoLayout();
 		}
 		
 		public function loadBtndef(btndef:Loader,x:int,y:int,w:int,h:int,ox:int,oy:int):void
@@ -254,8 +283,10 @@ package fnscriper.display
 			if (btndef.content is Bitmap)
 				completeHandler(null);
 			else
+			{
+				_cellIndex = -1;
 				btndef.contentLoaderInfo.addEventListener(Event.COMPLETE,completeHandler);
-			
+			}
 			function completeHandler(e:Event):void
 			{
 				var bmd:BitmapData = (btndef.content as Bitmap).bitmapData;
@@ -267,6 +298,36 @@ package fnscriper.display
 				bitmapDataSource = [bmd1,bmd2];
 				animLength = 2;
 				cellIndex = 0;
+				autoLayout();
+			}
+		}
+		
+		public function loadBlt(btndef:Loader,x:int,y:int,w:int,h:int,sx:int,sy:int,sw:int,sh:int):void
+		{
+			this.disposeBitmapDataSource();
+			
+			if (btndef.content is Bitmap)
+				completeHandler(null);
+			else
+			{
+				_cellIndex = -1;
+				btndef.contentLoaderInfo.addEventListener(Event.COMPLETE,completeHandler);
+			}
+			function completeHandler(e:Event):void
+			{
+				var source:BitmapData = (btndef.content as Bitmap).bitmapData;
+				var bmd:BitmapData = new BitmapData(w,h,true,0);
+				var m:Matrix = new Matrix();
+				m.translate(-sx,-sy);
+				m.scale(w / sw,h / sh);
+				bmd.draw(source,m,null,null,null,true);
+				bitmapDataSource = [bmd];
+				animLength = 1;
+				cellIndex = 0;
+			
+				x = x;
+				y = y;
+				autoLayout();
 			}
 		}
 		
@@ -276,6 +337,7 @@ package fnscriper.display
 			
 			this.bitmapDataSource = [bmd];
 			this.cellIndex = 0;
+			this.autoLayout();
 		}
 		
 		private var frameTime:int;
@@ -336,6 +398,38 @@ package fnscriper.display
 			return result;
 		}
 		
+		public function renderToBitmapData(bmd:BitmapData):void
+		{
+			try
+			{
+				if (bitmapData)
+					bmd.copyPixels(bitmapData,bitmapData.rect,new Point(x,y));
+			} 
+			catch(error:Error) 
+			{
+			}
+		}
+		
+		private function autoLayout():void
+		{
+			var underline:int = FNSFacade.instance.model.underline;
+			switch (id)
+			{
+				case "l":
+					x = 0;
+					y = underline - height;
+					break;
+				case "c":
+					x = (view.contentWidth - width) / 2;
+					y = underline - height;
+					break;
+				case "r":
+					x = view.contentWidth - width;
+					y = underline - height;
+					break;
+			}
+		}
+		
 		public function disposeBitmapDataSource():void
 		{
 			if (!bitmapDataSource)
@@ -350,8 +444,12 @@ package fnscriper.display
 			disposeBitmapDataSource();
 			animMode = 3;
 			
-			if (parent)
-				parent.removeChild(this);
+			var list:Array = view.spCanvas;
+			var i:int = list.indexOf(this)
+			if (i != -1)
+				list.splice(i,1);
+			
+			delete view.sp[id]
 		}
 	}
 }

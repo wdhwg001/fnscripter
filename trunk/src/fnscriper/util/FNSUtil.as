@@ -3,6 +3,8 @@ package fnscriper.util
 	import flash.filters.DropShadowFilter;
 	import flash.text.TextFormat;
 	
+	import flashx.textLayout.elements.BreakElement;
+	
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSVO;
 
@@ -48,10 +50,10 @@ package fnscriper.util
 			{
 				if (text.charAt(0) == "\"" && text.charAt(text.length - 1) == "\"")
 					result += text.slice(1,text.length - 1);
-				else if (text.charAt(0) == "$" && FNSFacade.instance.model.vars.hasOwnProperty(text))
-					result += FNSFacade.instance.model.vars[text] 
+				else if (text.charAt(0) == "$")
+					result += FNSFacade.instance.model.getVar(decodeNumaliasReplace(text)); 
 				else
-					result += text;
+					result += decodeStraliasReplace(text);
 			}
 			return result;
 		}
@@ -59,37 +61,52 @@ package fnscriper.util
 		public static function decodeNumber(v:String,errorReturnSource:Boolean = true):Object
 		{
 			v = decodeNumaliasReplace(v);
-			var vars:Object = FNSFacade.instance.model.vars;
-			for (var p:String in vars)
+			var newstr:String = "";
+			var index:int = 0;
+			while (index < v.length)
 			{
-				if (p.charAt(0) == "%")
-					v = replaceAll(v,p,vars[p]);
+				var ch:String = v.charAt(index);
+				if (ch == "%" || ch == "$" || ch == "?")
+				{
+					var num:String = readNumber(v,index + 1);
+					if (ch == "?")
+						num += readArrayBody(v,index + 1 + num.length)
+					
+					var r:Object = FNSFacade.instance.model.getVar(ch + num);
+					if (r)
+						newstr += r.toString();
+					index += num.length + 1;
+				}
+				else
+				{
+					newstr += ch;
+					index++;
+				}
 			}
-			var result:Number = OperatorUtil.exec(v);
+			
+			var result:Number = OperatorUtil.exec(newstr);
 			if (isNaN(result))
 				return errorReturnSource ? v : NaN;
 			else
 				return result;
 		}
 		
-		private static function replaceAll(str:String,oldValue:String,newValue:String):String
-		{
-			var newStr:String = str;
-			do
-			{
-				str = newStr;
-				newStr = str.replace(oldValue,newValue);
-			}
-			while (newStr != str)
-			return newStr;
-		}
-		
 		public static function decodeNumaliasReplace(v:String):String
 		{
 			var result:String = v;
-			var nums:Object = FNSFacade.instance.runner.numalias;
-			for (var p:String in nums)
-				result = result.replace(new RegExp("\\b" + p + "\\b","g"),nums[p]);
+			var numalias:Object = FNSFacade.instance.runner.numalias;
+			for (var p:String in numalias)
+				result = result.replace(new RegExp("\\b" + p + "\\b","g"),numalias[p]);
+			
+			return result;
+		}
+		
+		public static function decodeStraliasReplace(v:String):String
+		{
+			var result:String = v;
+			var stralias:Object = FNSFacade.instance.runner.stralias;
+			for (var p:String in stralias)
+				result = result.replace(new RegExp("\\b" + p + "\\b","g"),stralias[p]);
 			
 			return result;
 		}
@@ -126,6 +143,23 @@ package fnscriper.util
 				ch = s.charAt(startIndex);
 			}
 			return result;
+		}
+		
+		private static function readArrayBody(s:String,startIndex:int):String
+		{
+			var index:int = startIndex;
+			while (index < s.length)
+			{
+				var ch:String = s.charAt(index);
+				index++;
+				if (ch != "[")
+					break;
+				var num:String = readNumber(s,index);
+				index+=num.length;
+				ch = s.charAt(index);
+				index++;
+			}
+			return s.slice(startIndex,index)
 		}
 	}
 }

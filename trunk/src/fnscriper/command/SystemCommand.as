@@ -1,5 +1,6 @@
 package fnscriper.command
 {
+	import flash.display.StageDisplayState;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
 	import flash.net.FileFilter;
@@ -8,6 +9,7 @@ package fnscriper.command
 	import flash.ui.ContextMenuItem;
 	import flash.utils.ByteArray;
 	import flash.utils.Dictionary;
+	import flash.utils.getTimer;
 	
 	import flashx.textLayout.elements.BreakElement;
 	
@@ -24,7 +26,7 @@ package fnscriper.command
 		 * windowerase -屏蔽文字框
 		 * 
 		 */
-		[CMD(paramTypes="S")]
+		[CMD("S")]
 		public function systemcall(v:String):void
 		{
 			switch(v)
@@ -49,15 +51,22 @@ package fnscriper.command
 				case "windowerase":
 					view.textWindow.visible = false;
 					break;
+				case "fullscreen":
+					if (view.stage.displayState != StageDisplayState.FULL_SCREEN)
+						view.stage.displayState = StageDisplayState.FULL_SCREEN
+					else
+						view.stage.displayState = StageDisplayState.NORMAL
+					break;
 			}
 		}
 		
 
+		private var menuCustomItems:Array;
 		public function rmenu(...reg):void
 		{
 			var menu:ContextMenu = view.contextMenu;
 			var cmds:Dictionary = new Dictionary();
-			for (var i:int = 0;i < reg.length;i+=2)
+			for (var i:int = 0;i < reg.length;i += 2)
 			{
 				var item:ContextMenuItem = new ContextMenuItem(reg[i],i == 0);
 				item.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,menuItemSelectHandler);
@@ -67,17 +76,24 @@ package fnscriper.command
 			}
 			view.contextMenu = menu;
 			
+			this.menuCustomItems = menu.customItems;
+			
 			function menuItemSelectHandler(event:ContextMenuEvent):void
 			{
 				systemcall(cmds[event.currentTarget]);
 			}
 		}
 		
+		public function rmode(v:int):void
+		{
+			view.contextMenu.customItems = v == 1 ? menuCustomItems : [];
+			view.contextMenu = view.contextMenu;
+		}
+		
 		private function load():void
 		{
 			var file:FileReference = new FileReference();
 			file.addEventListener(Event.SELECT,selectFileHandler);
-			file.addEventListener(Event.CANCEL,fault);
 			file.browse([new FileFilter("sav文件","*.sav")]);
 			
 			function selectFileHandler(event:Event):void
@@ -92,26 +108,27 @@ package fnscriper.command
 				model.createFromByteArray(file.data);
 				view.loadFromVO();
 			}
-			
-			function fault(e:Event):void
-			{
-			}
 		}
 		
+		private var tempsave:ByteArray;
+
 		private function save():void
 		{
 			var file:FileReference = new FileReference();
-			file.addEventListener(Event.SELECT,selectFileHandler);
-			file.addEventListener(Event.CANCEL,fault);
-			file.save(model.getByteArray(),"game.sav");
-			
-			function selectFileHandler(event:Event):void
-			{
-			}
-			
-			function fault(e:Event):void
-			{
-			}
+			file.save(tempsave ? tempsave : model.getByteArray(),"game.sav");
+		}
+		
+		
+		public function saveon():void
+		{
+			model.saveon = true;
+			tempsave = null;
+		}
+		
+		public function saveoff():void
+		{
+			model.saveon = false;
+			tempsave = model.getByteArray();
 		}
 		
 		public function lookbackflush():void
@@ -120,9 +137,54 @@ package fnscriper.command
 			view.textWindow.showText(view.textWindow.historyText[view.textWindow.historyText.length - 1]);
 		}
 		
+		[CMD("SS")]
+		public function clickpos(x:String,y:String):void
+		{
+			model.setVar(x,view.mouseX);
+			model.setVar(y,view.mouseY);
+		}
+		
 		public function skipoff():void
 		{
 			runner.isSkip = false;
+		}
+		
+		public function resettimer():void
+		{
+			model.timer = getTimer();
+		}
+		
+		public function menu_full():void
+		{
+			view.stage.displayState = StageDisplayState.FULL_SCREEN;
+		}
+		
+		public function menu_window():void
+		{
+			view.stage.displayState = StageDisplayState.NORMAL;
+		}
+		
+		[CMD("S")]
+		public function gettimer(v:String):void
+		{
+			var t:int = getTimer() - model.timer;
+			model.setVar(v,t);
+		}
+		[CMD("SSS")]
+		public function date(y:String,m:String,d:String):void
+		{
+			var date:Date= new Date();
+			model.setVar(y,date.fullYear);
+			model.setVar(m,date.month + 1);
+			model.setVar(d,date.day);
+		}
+		[CMD("SSS")]
+		public function time(h:String,m:String,s:String):void
+		{
+			var date:Date= new Date();
+			model.setVar(h,date.hours);
+			model.setVar(m,date.minutes);
+			model.setVar(s,date.seconds);
 		}
 	}
 }
