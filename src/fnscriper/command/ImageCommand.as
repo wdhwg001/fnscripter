@@ -25,10 +25,9 @@ package fnscriper.command
 			model.humanz = v;
 		}
 		
-		public function print(effect:int = 0,length:int = 0):void
+		public function print(effect:int = 0,length:int = 0,img:String = ""):void
 		{
-			view.print(effect,length);
-			trace("?print " + effect);
+			view.print(effect,length,img);
 		}
 		
 		/**
@@ -38,10 +37,12 @@ package fnscriper.command
 		 * @param length
 		 * 
 		 */
-		public function bg(url:String,effect:int = 0,length:int = 0):void
+		public function bg(url:String,effect:int = -1,len:int = 0,img:String = ""):void
 		{
 			model.bg = url;
-			view.bg(url,effect,length);
+			view.bg(url);
+			if (effect != -1)
+				print(effect,len,img);
 		}
 		
 		/**
@@ -51,10 +52,11 @@ package fnscriper.command
 		 * @param effect
 		 * 
 		 */
-		public function ld(index:String,url:String,effect:int):void
+		public function ld(index:String,url:String,effect:int = -1, len:int = 0,img:String = ""):void
 		{
 			lsp(index,url);
-			trace("?ld " + effect);
+			if (effect != -1)
+				print(effect,len,img);
 		}
 			
 		/**
@@ -255,7 +257,7 @@ package fnscriper.command
 			image.alpha = alpha / 100;
 		}
 		
-		[CMD(paramTypes=" SS")]
+		[CMD(" SS")]
 		public function getspsize(index:String,wField:String,hField:String):void
 		{
 			var v:Image = view.sp[index];
@@ -266,6 +268,17 @@ package fnscriper.command
 			model.setVar(hField,v.height);
 		}
 		
+		public function avi(v:String,haltable:int):void
+		{
+			mpegplay(v,haltable);
+		}
+		
+		public function mpegplay(v:String,haltable:int):void
+		{
+			runner.isWait = true;
+			view.mpegplay(v,haltable);
+		}
+		
 		public function repaint():void
 		{
 			view.loadFromVO();
@@ -273,12 +286,12 @@ package fnscriper.command
 		
 		public function allsphide():void
 		{
-			view.spCanvas.visible = false;
+			view.screenbm.visible = false;
 		}
 		
 		public function allspresume():void
 		{
-			view.spCanvas.visible = true;
+			view.screenbm.visible = true;
 		}
 	}
 }

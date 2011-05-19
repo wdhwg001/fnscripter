@@ -7,6 +7,8 @@ package fnscriper.display
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
 	import flash.filters.DropShadowFilter;
+	import flash.text.AntiAliasType;
+	import flash.text.GridFitType;
 	import flash.text.TextField;
 	import flash.text.TextFormat;
 	import flash.ui.Keyboard;
@@ -25,7 +27,6 @@ package fnscriper.display
 	public class TextWindow extends Sprite
 	{
 		public var textField:TextField;
-		public var enabled:Boolean = true;
 		public var selectedMode:Boolean;
 		
 		public var background:Image;
@@ -37,6 +38,7 @@ package fnscriper.display
 		 * 下面的文字为新页 
 		 */
 		private var isNewPage:Boolean;
+		private var isIgnoreClickStr:Boolean;
 		
 		public function get facade():FNSFacade
 		{
@@ -56,6 +58,8 @@ package fnscriper.display
 			this.textField = new TextField();
 			this.textField.wordWrap = true;
 			this.textField.selectable = false;
+			this.textField.antiAliasType = AntiAliasType.ADVANCED;
+			this.textField.gridFitType = GridFitType.NONE;
 			this.textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,12,0xFFFFFF);
 			this.addChild(this.textField);
 			
@@ -68,7 +72,6 @@ package fnscriper.display
 			
 			background.source = "";
 			selectedMode = false;
-			enabled = true;
 			
 			historyText = [];
 			historyIndex = -1;
@@ -149,7 +152,7 @@ package fnscriper.display
 		
 		protected function tickHandler(event:TickEvent):void
 		{
-			if (selectedMode && historyIndex == -1)
+			if (selectedMode && historyIndex == -1 && facade.runner.isBtnMode)
 			{
 				var line:int = textField.getLineIndexAtPoint(textField.mouseX,textField.mouseY);
 				var len:int = textField.numLines;
@@ -157,17 +160,24 @@ package fnscriper.display
 				{
 					var start:int = textField.getLineOffset(i);
 					var end:int = start + textField.getLineLength(i);
-					textField.setTextFormat(new TextFormat(null,null,facade.model.selectcolor[i == line ? 0 : 1]),start,end);
+					
+					try
+					{
+						textField.setTextFormat(new TextFormat(null,null,facade.model.selectcolor[i == line ? 0 : 1]),start,end);
+					} 
+					catch(error:Error) 
+					{
+					}
 				}
 			}
 		}
 		
 		protected function clickHandler(event:MouseEvent):void
 		{
-			if (!visible || !enabled)
+			if (!visible)
 				return;
 				
-			if (selectedMode && historyIndex == -1)
+			if (selectedMode && historyIndex == -1 && facade.runner.isBtnMode)
 			{
 				var line:int = textField.getLineIndexAtPoint(textField.mouseX,textField.mouseY);
 				if (line != -1)
@@ -184,7 +194,7 @@ package fnscriper.display
 		 */
 		public function next():void
 		{
-			if (!visible || !enabled)
+			if (!visible || facade.runner.isWait)
 				return;
 			
 			if (waitTimer)
@@ -210,7 +220,7 @@ package fnscriper.display
 					}
 					else
 					{
-						facade.runner.isWait = false;
+						facade.runner.isTextWait = false;
 						facade.runner.doNext();
 					}
 				}
@@ -263,6 +273,26 @@ package fnscriper.display
 		{
 			putText(list.join("\n"));
 			selectedMode = true;
+		}
+		
+		public function textclear():void
+		{
+			showText("");
+		}
+		
+		public function locate(x:int = 0,y:int = 0):void
+		{
+			for (var i:int = 0;i < x;i++)
+				text += " ";
+			for (i = 0;i < y;i++)
+				text += "\n";
+			
+			tween();
+		}
+		public function br():void
+		{
+			text += "\n";
+			tween();
 		}
 		
 		public function showText(v:String):void
@@ -322,8 +352,17 @@ package fnscriper.display
 			}
 			else if (text.slice(tweenIndex,tweenIndex + 2) == "!s")
 			{
-				var s:String = FNSUtil.readNumber(text,tweenIndex + 2);
-				model.textspeed = int(s);
+				var s:String;
+				if (text.slice(tweenIndex,tweenIndex + 3) == "!sd")
+				{
+					s = "d";
+					model.textspeed = facade.model.defaultspeed[facade.model.defaultspeedIndex];
+				}
+				else
+				{
+					s = FNSUtil.readNumber(text,tweenIndex + 2);
+					model.textspeed = int(s);
+				}
 				if (tweenTimer)
 					tweenTimer.delay = model.textspeed;
 				tweenIndex += s.length + 2;
@@ -335,8 +374,11 @@ package fnscriper.display
 				if (!facade.runner.isSkip)
 				{
 					stopTween();
-					this.enabled = false;
-					setTimeout(function ():void{enabled = true;next()},int(s));
+					facade.runner.isWait = true;
+					waitTimer = setTimeout(function ():void{
+						facade.runner.isWait = false;
+						next();
+					},int(s));
 				}
 			}
 			else if (text.slice(tweenIndex,tweenIndex + 2) == "!d")
@@ -346,7 +388,7 @@ package fnscriper.display
 				if (!facade.runner.isSkip)
 				{
 					stopTween();
-					setTimeout(next,int(s));
+					waitTimer = setTimeout(next,int(s));
 				}
 			}
 			else if (a == "@")
@@ -362,11 +404,21 @@ package fnscriper.display
 				if (!facade.runner.isSkip)
 					stopTween();
 			}
+			else if (a == "_")
+			{
+				tweenIndex++;
+				isIgnoreClickStr = true;
+			}
 			else
 			{
+				isIgnoreClickStr = false;
+				
 				textField.appendText(a);
 				textField.setTextFormat(new TextFormat(model.defaultfont,null,historyIndex != -1 ? 0xFFFF00 : model.defaultcolor),textField.text.length - 1,textField.text.length);
 				tweenIndex++;
+				
+				if (model.clickstr.indexOf(a) != -1)
+					stopTween();
 			}
 			
 			if (tweenIndex >= text.length)

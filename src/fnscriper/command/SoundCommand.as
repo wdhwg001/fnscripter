@@ -1,8 +1,10 @@
 package fnscriper.command
 {
 	import flash.media.Sound;
+	import flash.media.SoundChannel;
 	import flash.media.SoundLoaderContext;
 	import flash.media.SoundMixer;
+	import flash.media.SoundTransform;
 	import flash.net.URLRequest;
 	
 	import fnscriper.util.FNSUtil;
@@ -34,9 +36,54 @@ package fnscriper.command
 			view.bgmstop();
 		}
 		
+		public function play(url:String):void
+		{
+			bgm(url);
+		}
+		public function playonce(url:String):void
+		{
+			bgmonce(url);
+		}
+		public function playstop(url:String):void
+		{
+			bgmstop()
+		}
+		
+		public function wave(url:String):void
+		{
+			bgmonce(url);
+		}
+		public function waveloop(url:String):void
+		{
+			bgm(url);
+		}
+		public function wavestop(url:String):void
+		{
+			bgmstop()
+		}
+		
+		public function mp3(url:String):void
+		{
+			bgm(url);
+		}
+		public function mp3once(url:String):void
+		{
+			bgmonce(url);
+		}
+		public function mp3stop(url:String):void
+		{
+			bgmstop()
+		}
+		
 		public function dwave(index:int,url:String):void
 		{
-			view.dwave(index,url);
+			view.dwave(index,url,1);
+		}
+		
+		public function dwaveloop(index:int,url:String):void
+		{
+			model.dwaveloop[index] = url;
+			view.dwave(index,url,uint.MAX_VALUE);
 		}
 		
 		public function dwavestop(index:int):void
@@ -44,9 +91,29 @@ package fnscriper.command
 			view.dwavestop(index);
 		}
 		
-		public function clickvoice(v1:String,v2:String):void
+		public function dwaveload(index:int,url:String):void
 		{
-			model.clickvoice = [v1,v2];
+			model.dwaveload[index] = url;
+			view.dwaveload(index,url);
+		}
+		
+		public function dwaveplay(index:int):void
+		{
+			delete model.dwaveload[index];
+			view.dwaveplay(index,1);
+		}
+		
+		public function dwaveplayloop(index:int):void
+		{
+			delete model.dwaveload[index];
+			model.dwaveloop[index] = model.dwaveload[index];
+			view.dwaveplay(index,uint.MAX_VALUE);
+		}
+		
+		public function chvol(index:int,vol:int):void
+		{
+			var channel:SoundChannel = view.dwaveChannel[index] as SoundChannel;
+			channel.soundTransform = new SoundTransform(vol / 100);
 		}
 	}
 }

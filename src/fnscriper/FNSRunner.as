@@ -2,14 +2,17 @@ package fnscriper
 {
 	import flash.display.Sprite;
 	import flash.media.SoundChannel;
+	import flash.net.drm.VoucherAccessInfo;
 	import flash.utils.describeType;
 	import flash.utils.setTimeout;
 	
 	import flashx.textLayout.elements.BreakElement;
 	import flashx.textLayout.elements.ListElement;
 	
+	import fnscriper.command.ButtonCommand;
 	import fnscriper.command.CommandBase;
 	import fnscriper.command.DataCommand;
+	import fnscriper.command.EffectCommand;
 	import fnscriper.command.IgnoreCommand;
 	import fnscriper.command.ImageCommand;
 	import fnscriper.command.InteractiveCommand;
@@ -24,6 +27,11 @@ package fnscriper
 		public var data:Array;
 		public var commands:Object = {};
 		public var commandParams:Object = {};
+		
+		/**
+		 * 数值定义
+		 */
+		public var stralias:Object = {};
 		
 		/**
 		 * 数值定义
@@ -44,25 +52,9 @@ package fnscriper
 		 * 暂时不执行下面的指令 
 		 */
 		public var isWait:Boolean;
-		
+		public var isTextWait:Boolean;
 		public var isSkip:Boolean;
-		
-		private var _isLock:Boolean;
-
-		/**
-		 * 暂时锁定游戏
-		 */
-		public function get isLock():Boolean
-		{
-			return _isLock;
-		}
-
-		public function set isLock(value:Boolean):void
-		{
-			_isLock = value;
-			FNSFacade.instance.mouseEnabled = FNSFacade.instance.mouseChildren = !value;
-		}
-		
+		public var isBtnMode:Boolean;
 		
 		public function get model():FNSVO
 		{
@@ -83,18 +75,25 @@ package fnscriper
 		{
 			commands = {
 				"goto":goto,
+				"skip":skip,
+				"jumpb":jumpb,
+				"jumpf":jumpf,
 				"game":game,
 				"defsub":defsub,
-				"return":defsubReturn,
+				"break":forbreak,
+				"next":fornext,
+				"return":subreturn,
 				"reset":reset
 			};
 			regCommand(new IgnoreCommand());
 			regCommand(new DataCommand());
 			regCommand(new InteractiveCommand());
+			regCommand(new ButtonCommand());
 			regCommand(new ImageCommand());
 			regCommand(new SoundCommand());
 			regCommand(new TextCommand());
 			regCommand(new SystemCommand());
+			regCommand(new EffectCommand())
 		}
 	
 		public function regCommand(command:CommandBase):void
@@ -111,8 +110,12 @@ package fnscriper
 				{ 
 					var o:Object = {};
 					for each (var arg:XML in metadata)
-						o[arg.@key.toString()] = arg.@value.toString();
-					
+					{
+						var key:String = arg.@key.toString();
+						if (key == "") 
+							key = "paramTypes";
+						o[key] = arg.@value.toString();
+					}
 					commandParams[name] = o;
 				}
 			}
@@ -130,7 +133,7 @@ package fnscriper
 			for (var i:int = 0;i < data.length;i++)
 			{
 				var line:String = data[i];
-				line = line.replace(/;[^"]*$/,"");
+				line = line.replace(/^\s+/,"").replace(/;[^"]*$/,"");
 				if (line.charAt(0) == "*")
 				{
 					var value:String = line.slice(1);
@@ -146,8 +149,10 @@ package fnscriper
 					var params:Array = FNSUtil.split(value,",");
 					if (cmd == "defsub")
 						defsubs[params[0]] = true;
+					else if (cmd == "stralias")
+						stralias[params[0]] = params[1].toString().slice(1,params[1].toString().length - 1);
 					else if (cmd == "numalias")
-						numalias[params[0]] = params[1];
+						numalias[params[0]] = int(params[1]).toString();
 				}
 			}
 		}
@@ -156,17 +161,25 @@ package fnscriper
 		{
 			var origin:String = data[model.step];
 			trace(origin);
-			origin = origin.replace(/;[^"]*$/,"");
+			origin = origin.replace(/^\s+/,"").replace(/;[^"]*$/,"");
 			var lines:Array = FNSUtil.split(origin,":");
 			for each (var line:String in lines)
 			{
-				if (line.length && line.charAt(0) != "*")
+				if (line.length && line.charAt(0) != "*" && line.charAt(0) != "~")
 				{
 					if (line.slice(0,3) == "if ") //条件判断
 					{
 						var ifBody:String = getIfBody(line);
 						if (FNSUtil.decodeNumber(ifBody,false))
-							line = line.slice(ifBody.length + 4);
+							line = line.slice(ifBody.length + 3 + 1);
+						else
+							break;//跳过此行
+					}
+					else if (line.slice(0,6) == "notif ")
+					{
+						ifBody = getIfBody(line);
+						if (!FNSUtil.decodeNumber(ifBody,false))
+							line = line.slice(ifBody.length + 6 + 1);
 						else
 							break;//跳过此行
 					}
@@ -194,7 +207,7 @@ package fnscriper
 						}
 						else if (defsubs.hasOwnProperty(cmd))
 						{
-							runDefsub(cmd,value);
+							gosub(cmd,value);
 							break;
 						}
 						else
@@ -223,8 +236,8 @@ package fnscriper
 				if (v.charAt(0) == "*" || v.charAt(0) == "#")
 					result[i] = params[i];
 				else if (cmdParam == "S")
-					result[i] = FNSUtil.decodeNumaliasReplace(params[i]);
-				else if (cmdParam == "T" || v.indexOf("\"") != -1 || v.indexOf("$") != -1)
+					result[i] = FNSUtil.decodeStraliasReplace(FNSUtil.decodeNumaliasReplace(params[i]));
+				else if (cmdParam != "N" && (cmdParam == "T" || v.indexOf("\"") != -1 || v.indexOf("$") != -1))/*不准确的判断字符串方式*/
 					result[i] = FNSUtil.decodeString(v);
 				else
 					result[i] = FNSUtil.decodeNumber(v);
@@ -246,7 +259,7 @@ package fnscriper
 		
 		public function doNext():void
 		{
-			while (!isWait && !isLock && model.step < data.length - 1)
+			while (!isWait && !isTextWait && model.step < data.length - 1)
 			{
 				model.step++;
 				run();
@@ -267,14 +280,14 @@ package fnscriper
 		* 基本指令
 		*/
 		
-		public function runDefsub(subName:String,value:String):void
+		public function gosub(subName:String,value:String = null):void
 		{
 			model.callLayer.push(model.step);
 			model.callLayerParam.push(value);
 			goto("*"+subName);
 		}
 		
-		public function defsubReturn():void
+		public function subreturn():void
 		{
 			model.callLayerParam.pop();
 			model.step = model.callLayer.pop();
@@ -289,26 +302,43 @@ package fnscriper
 		public function forStart(v:String):void
 		{
 			var arr:Array = v.split(" ");
-			var max:int = arr.pop();
-			if (arr.pop() != "to")
+			var end:int;
+			var step:int = 1;
+			var n:int = arr.pop();
+			var sys:String = arr.pop();
+			if (sys == "step")
+			{
+				step = n;
+				n = arr.pop();
+				sys = arr.pop();
+				if (sys == "to")
+					end = n;
+				else
+					return;
+			}
+			else if (sys == "to")
+				end = n;
+			else
 				return;
+			
 			arr = arr.join().split("=");
 			var param:String = arr[0];
 			var start:int = arr[1];
 			
-			model.vars[param] = start;
+			model.setVar(param,start);
 			model.forLayer.push(model.step);
-			model.forLayerParam.push([param,max].join(","));
+			model.forLayerParam.push([param,end,step].join(","));
 		}
 		
-		public function next():void
+		public function fornext():void
 		{
 			var params:Array = model.forLayerParam[model.forLayerParam.length - 1].toString().split(",");
-			var index:int = model.vars[params[0]];
-			var max:int = params[1];
-			if (index < max)
+			var index:int = model.getNumVar(params[0]);
+			var end:int = params[1];
+			var step:int = params[2];
+			if (int(step) > 0 ? (index <= end) : (index >= end))
 			{
-				model.vars[params[0]]++;
+				model.setVar(params[0],index + int(step));
 				model.step = model.forLayer[model.forLayer.length - 1];
 			}
 			else
@@ -316,6 +346,24 @@ package fnscriper
 				model.forLayer.pop();
 				params.pop();
 			}
+		}
+		
+		public function forbreak():void
+		{
+			model.forLayer.pop();
+			var params:Array = model.forLayerParam[model.forLayerParam.length - 1].toString().split(",");
+			params.pop();
+			var depth:int = 1;
+			do
+			{
+				model.step++;
+				var line:String = data[model.step];
+				if (line.slice(0,4) == "for ")
+					depth++;
+				if (line == "next")
+					depth--;
+			}
+			while (depth > 0);
 		}
 		
 		public function goto(v:String):void
@@ -328,12 +376,34 @@ package fnscriper
 			goto("*start");
 		}
 		
+		public function skip(v:int):void
+		{
+			model.step += v;
+		}
+		
+		public function jumpf():void
+		{
+			do
+			{
+				model.step--
+			}
+			while (data[model.step].toString().charAt(0) == "~");
+		}
+		public function jumpb():void
+		{
+			do
+			{
+				model.step++
+			}
+			while (data[model.step].toString().charAt(0) == "~");
+		}
+		
 		public function reset():void
 		{
 			model.clear();
 			view.clear();
 			
-			isWait = false;
+			isWait = isBtnMode = isTextWait = isSkip = false;
 			game();
 		}
 	}

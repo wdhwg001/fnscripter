@@ -1,6 +1,10 @@
 package fnscriper.command
 {
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.text.TextField;
+	
+	import fnscriper.events.ViewEvent;
 
 	public class TextCommand extends CommandBase
 	{
@@ -8,11 +12,6 @@ package fnscriper.command
 		{
 			model.defaultspeed = [low,middle,high];
 			model.textspeed = middle;
-		}
-		
-		public function textspeed(s:int):void
-		{
-			model.textspeed = s;
 		}
 		
 		public function defaultfont(v:String):void
@@ -63,8 +62,28 @@ package fnscriper.command
 		
 		public function putText(v:String):void
 		{
+			runner.isTextWait = true;
 			view.textWindow.putText(v);
-			runner.isWait = true;
+		}
+		
+		public function textclear():void
+		{
+			view.textWindow.textclear();	
+		}
+		
+		public function locate(x:int = 0,y:int = 0):void
+		{
+			view.textWindow.locate();	
+		}
+		
+		public function br():void
+		{
+			view.textWindow.br();	
+		}
+		
+		public function textspeed(s:int):void
+		{
+			model.textspeed = s;
 		}
 		
 		public function selectcolor(c1:uint,c2:uint):void
@@ -75,6 +94,101 @@ package fnscriper.command
 		public function selectvoice(v1:String,v2:String):void
 		{
 			model.selectvoice = [v1,v2];
+		}
+		
+		public function clickstr(str:String,num:int = 0):void
+		{
+			model.clickstr = str;
+		}
+		
+		public function clickvoice(v1:String,v2:String):void
+		{
+			model.clickvoice = [v1,v2];
+		}
+		
+		public function select(...reg):void
+		{
+			runner.isWait = runner.isBtnMode = true;
+			
+			var textList:Array = [];
+			var gotoList:Array = [];
+			for (var i:int = 0;i < reg.length;i += 2)
+			{
+				textList.push(reg[i]);
+				gotoList.push(reg[i + 1]);
+			}
+			view.textWindow.select(textList);
+			view.addViewHandler(completeHandler);
+			
+			function completeHandler(e:ViewEvent):void
+			{
+				if (e.btnIndex == -1 || !runner.isWait)
+					return;
+				
+				view.removeViewHandler(completeHandler);
+				
+				runner.goto(gotoList[e.btnIndex]);
+				runner.isWait = runner.isBtnMode = false;
+				runner.doNext();
+			}
+		}
+		public function selgosub(...reg):void
+		{
+			runner.isWait = runner.isBtnMode = true;
+			
+			var textList:Array = [];
+			var gotoList:Array = [];
+			for (var i:int = 0;i < reg.length;i += 2)
+			{
+				textList.push(reg[i]);
+				gotoList.push(reg[i + 1]);
+			}
+			view.textWindow.select(textList);
+			view.addViewHandler(completeHandler);
+			
+			function completeHandler(e:ViewEvent):void
+			{
+				if (e.btnIndex == -1 || !runner.isWait)
+					return;
+				
+				view.removeViewHandler(completeHandler);
+				
+				runner.gosub(gotoList[e.btnIndex]);
+				runner.isWait = runner.isBtnMode = false;
+				runner.doNext();
+			}
+		}
+		[CMD("S")]
+		public function selnum(key:String,...reg):void
+		{
+			runner.isWait = runner.isBtnMode = true;
+			
+			var textList:Array = [];
+			for (var i:int = 0;i < reg.length;i ++)
+				textList.push(reg[i]);
+			
+			view.textWindow.select(textList);
+			view.addViewHandler(completeHandler);
+			
+			function completeHandler(e:ViewEvent):void
+			{
+				if (e.btnIndex == -1 || !runner.isWait)
+					return;
+				
+				view.removeViewHandler(completeHandler);
+				
+				model.setVar(key,e.btnIndex);
+				runner.isWait = runner.isBtnMode = false;
+				runner.doNext();
+			}
+		}
+		[CMD("SS")]
+		public function getcursorpos(x:String,y:String):void
+		{
+			var p:Point = view.textWindow.textField.getCharBoundaries(view.textWindow.textField.caretIndex).topLeft;
+			p = view.globalToLocal(view.textWindow.textField.localToGlobal(p));
+			model.setVar(x,p.x);
+			model.setVar(y,p.y);
 		}
 	}
 }
