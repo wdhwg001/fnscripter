@@ -9,7 +9,7 @@ package fnscriper
 
 	public class FNSAsset
 	{
-		public var MAX_LOAD:int = 100;
+		public var MAX_LOAD:int = 500;
 		
 		public var baseurl:String = "";
 		public var urls:Object = {};
@@ -76,7 +76,7 @@ package fnscriper
 		
 		private function findUrls():void
 		{
-			const FILENAMES:Array = [".png",".jpg",".gif",".bmp",".mp3"]
+			const FILENAMES:Array = [".png",".jpg",".gif",".bmp"]
 			
 			refreshIndex();
 			do 
