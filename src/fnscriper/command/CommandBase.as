@@ -10,7 +10,7 @@ package fnscriper.command
 	{
 		public function get asset():FNSAsset
 		{
-			return FNSFacade.instance.asset;
+			return FNSFacade.instance.asset; 
 		}
 		
 		public function get facade():FNSFacade

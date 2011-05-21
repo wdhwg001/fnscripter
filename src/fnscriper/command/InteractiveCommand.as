@@ -6,10 +6,8 @@ package fnscriper.command
 	import flash.utils.setTimeout;
 	
 	import fnscriper.display.Image;
-	import fnscriper.events.TickEvent;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
-	import fnscriper.util.Tick;
 
 	public class InteractiveCommand extends CommandBase
 	{
