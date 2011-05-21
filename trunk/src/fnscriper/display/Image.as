@@ -20,6 +20,7 @@ package fnscriper.display
 	import flash.text.engine.FontWeight;
 	import flash.utils.ByteArray;
 	import flash.utils.Timer;
+	import flash.utils.getTimer;
 	
 	import flashx.textLayout.elements.BreakElement;
 	
@@ -27,9 +28,7 @@ package fnscriper.display
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSVO;
 	import fnscriper.FNSView;
-	import fnscriper.events.TickEvent;
 	import fnscriper.util.FNSUtil;
-	import fnscriper.util.Tick;
 	
 	import org.osmf.events.TimeEvent;
 
@@ -56,6 +55,10 @@ package fnscriper.display
 		{
 			return FNSFacade.instance.view;
 		}
+		public function get facade():FNSFacade
+		{
+			return FNSFacade.instance;
+		}
 
 		/**
 		 * 1 -播放一次；2 -循环播放；3 -不播放 
@@ -68,10 +71,15 @@ package fnscriper.display
 		public function set animMode(value:int):void
 		{
 			if (value != 3 && _animMode == 3)
-				Tick.instance.addEventListener(TickEvent.TICK,tickHandler);
+			{
+				prevTime = getTimer();
+				addEventListener(Event.ENTER_FRAME,tickHandler);
+			}
 			else if (value == 3 && _animMode != 3)
-				Tick.instance.removeEventListener(TickEvent.TICK,tickHandler);
-			
+			{
+				prevTime = 0;
+				removeEventListener(Event.ENTER_FRAME,tickHandler);
+			}
 			_animMode = value;
 		}
 		
@@ -307,7 +315,9 @@ package fnscriper.display
 			this.disposeBitmapDataSource();
 			
 			if (btndef.content is Bitmap)
+			{
 				completeHandler(null);
+			}
 			else
 			{
 				_cellIndex = -1;
@@ -317,16 +327,16 @@ package fnscriper.display
 			{
 				var source:BitmapData = (btndef.content as Bitmap).bitmapData;
 				var bmd:BitmapData = new BitmapData(w,h,true,0);
-				var m:Matrix = new Matrix();
-				m.translate(-sx,-sy);
-				m.scale(w / sw,h / sh);
-				bmd.draw(source,m,null,null,null,true);
+				bmd.copyPixels(source,new Rectangle(sx,sy,sw,sh),new Point());
 				bitmapDataSource = [bmd];
 				animLength = 1;
 				cellIndex = 0;
 			
 				x = x;
 				y = y;
+				width = w;
+				height = h;
+				
 				autoLayout();
 			}
 		}
@@ -341,9 +351,13 @@ package fnscriper.display
 		}
 		
 		private var frameTime:int;
-		protected function tickHandler(event:TickEvent):void
+		private var prevTime:int;
+		protected function tickHandler(event:Event):void
 		{
-			frameTime += event.interval;
+			var interval:int = getTimer() - prevTime;
+			prevTime = getTimer();
+			
+			frameTime += interval;
 			while (frameTime > 0)
 			{
 				if (cellIndex < animLength)
@@ -377,7 +391,7 @@ package fnscriper.display
 				result.applyFilter(result,result.rect,new Point(),new ColorMatrixFilter([0,0,0,0,0,
 					0,0,0,0,0,
 					0,0,0,0,0,
-					-0.33,-0.33,-0.33,1,0]));
+					-1/3,-1/3,-1/3,1,0]));
 				result.copyPixels(bmd,new Rectangle(0,0,bmd.width / 2,bmd.height),new Point(),result,new Point())
 				bmd.dispose();
 			}
@@ -403,7 +417,12 @@ package fnscriper.display
 			try
 			{
 				if (bitmapData)
-					bmd.copyPixels(bitmapData,bitmapData.rect,new Point(x,y));
+				{
+					if (this.scaleX == 1 && this.scaleY == 1)
+						bmd.copyPixels(bitmapData,bitmapData.rect,new Point(x,y));
+					else
+						bmd.draw(bitmapData,transform.matrix,null,null,null,true);
+				}
 			} 
 			catch(error:Error) 
 			{
@@ -426,6 +445,15 @@ package fnscriper.display
 				case "r":
 					x = view.contentWidth - width;
 					y = underline - height;
+					break;
+				case "b":
+					if (facade.model.bgalia)
+					{
+						x = facade.model.bgalia.x;
+						y = facade.model.bgalia.y;
+						width = facade.model.bgalia.w;
+						height = facade.model.bgalia.h;
+					}
 					break;
 			}
 		}

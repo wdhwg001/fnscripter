@@ -4,14 +4,32 @@ package fnscriper
 
 	public class FNSAsset
 	{
-		public var baseUrl:String = "arc/";
-		public function FNSAsset()
+		public var baseurl:String = "";
+		
+		public function get model():FNSVO
 		{
+			return FNSFacade.instance.model;
+		}
+		
+		public function FNSAsset(baseurl:String)
+		{
+			this.baseurl = baseurl;
 		}
 		
 		public function getURLRequest(v:String):URLRequest
 		{
-			return new URLRequest(baseUrl + v.replace(/\\/g,"/"));
+			var url:String = baseurl;
+			if (url && url.charAt(url.length - 1) != "/" && url.charAt(url.length - 1) != "\\")
+				url += "/"
+					
+			if (model.nsadir)
+			{
+				url += model.nsadir;
+				if (url && url.charAt(url.length - 1) != "/" && url.charAt(url.length - 1) != "\\")
+					url += "/";
+			}		
+			url += v;
+			return new URLRequest(url.replace(/\\/g,"/"));
 		}
 	}
 }

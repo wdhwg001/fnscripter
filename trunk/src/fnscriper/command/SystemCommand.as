@@ -40,10 +40,10 @@ package fnscriper.command
 					runner.doNext();
 					break;
 				case "save":
-					save();
+					savegame();
 					break;
 				case "load":
-					load();
+					loadgame();
 					break;
 				case "lookback":
 					view.textWindow.showHistory();
@@ -90,15 +90,17 @@ package fnscriper.command
 			view.contextMenu = view.contextMenu;
 		}
 		
-		private function load():void
+		public function loadgame(v:String = null):void
 		{
+			runner.isWait = true;
+			
 			var file:FileReference = new FileReference();
 			file.addEventListener(Event.SELECT,selectFileHandler);
+			file.addEventListener(Event.CANCEL,cancelFileHandler);
 			file.browse([new FileFilter("sav文件","*.sav")]);
 			
 			function selectFileHandler(event:Event):void
 			{
-				file.removeEventListener(Event.SELECT,selectFileHandler);
 				file.addEventListener(Event.COMPLETE,result);
 				file.load();
 			}
@@ -108,11 +110,17 @@ package fnscriper.command
 				model.createFromByteArray(file.data);
 				view.loadFromVO();
 			}
+			
+			function cancelFileHandler(e:Event):void
+			{
+				runner.isWait = false;
+				runner.doNext();
+			}
 		}
 		
 		private var tempsave:ByteArray;
 
-		private function save():void
+		public function savegame(v:String = null):void
 		{
 			var file:FileReference = new FileReference();
 			file.save(tempsave ? tempsave : model.getByteArray(),"game.sav");
@@ -134,7 +142,7 @@ package fnscriper.command
 		public function lookbackflush():void
 		{
 			view.textWindow.historyIndex = -1;
-			view.textWindow.showText(view.textWindow.historyText[view.textWindow.historyText.length - 1]);
+			view.textWindow.showHistory();
 		}
 		
 		[CMD("SS")]
@@ -185,6 +193,30 @@ package fnscriper.command
 			model.setVar(h,date.hours);
 			model.setVar(m,date.minutes);
 			model.setVar(s,date.seconds);
+		}
+		
+		public function nsa():void
+		{
+			nsadir("arc.nsa")
+		}
+		
+		public function nsadir(v:String):void
+		{
+			if (v.slice(v.length - 4,v.length).toLowerCase() == ".nsa")
+				v = v.slice(0,v.length - 4);
+			
+			model.nsadir = v;
+		}
+		
+		public function end():void
+		{
+			runner.isWait = true;
+		}
+		
+		public function mousecursor(v:String):void
+		{
+			model.mousecursor = v;
+			view.mousecursorimg.source = v;
 		}
 	}
 }

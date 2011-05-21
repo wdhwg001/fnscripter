@@ -8,6 +8,8 @@ package fnscriper
 	import flash.utils.getDefinitionByName;
 	
 	import flashx.textLayout.elements.BreakElement;
+	
+	import fnscriper.display.Image;
 
 	public class FNSVO
 	{
@@ -86,9 +88,14 @@ package fnscriper
 		public var bg:String = "";
 		
 		/**
+		 * 背景尺寸
+		 */
+		public var bgalia:Object = null;//{x,y,w,h}
+		
+		/**
 		 * 图片
 		 */
-		public var sp:Object = {};//{url:url,x:x,y:y,alpha:100,visible:1};
+		public var sp:Object = {};//{url,x,y,alpha,visible};
 		
 		/**
 		 * 背景音乐
@@ -112,12 +119,12 @@ package fnscriper
 		/**
 		 * 按钮定义
 		 */
-		public var btn:Object = {};//{x:x,y:y,w:int,h:int,ox:int,oy:int};或者图片id
+		public var btn:Object = {};//{x,y,w,h,ox,oy};或者图片id
 		
 		/**
 		 * 快速显示图片 
 		 */
-		public var blt:Object = {};//{x:x,y:y,w:w,h:h,sx:sx,sy:sy,sw:sw,sh:sh};显示区域左上角x坐标,y坐标,显示区域宽,高,预载图像截取左上角x坐标,y坐标,截取部分宽,高
+		public var blt:Object = {};//{x,y,w,h,sx,sy,sw,sh};显示区域左上角x坐标,y坐标,显示区域宽,高,预载图像截取左上角x坐标,y坐标,截取部分宽,高
 		
 		/**
 		 * 按钮预载图片
@@ -130,6 +137,11 @@ package fnscriper
 		public var texton:Boolean;
 		
 		/**
+		 * 每页只显示一行文本
+		 */
+		public var linepage:Boolean;
+		
+		/**
 		 * 其他效果时文本框是否显示
 		 */
 		public var erasetextwindow:int;
@@ -137,7 +149,7 @@ package fnscriper
 		/**
 		 * 文本框参数 
 		 */
-		public var textwindow:Object = {};//{tx:tx,ty:ty,tw:tw,th:th,fw:fw,fh:fh,fg:fg,lg:lg,speed:speed,bold:bold,shadow:shadow,skin:skin,wx:wx,wy:wy,wr:wr,wb:wb}
+		public var textwindow:Object = {};//{tx,ty,tw,th,fw,fh,fg,lg,speed,bold,shadow,skin,wx,wy,wr,wb}
 											//头文字左上角x坐标,y坐标,每行字数,行数,字宽,字高,字间距,行间距,单字显示速度毫秒数,粗体状态,阴影状态,窗体颜色,窗体左上角x坐标,y坐标,右下角x坐标,y坐标;
 		
 		/**
@@ -156,6 +168,11 @@ package fnscriper
 		public var clickstr:String = "";
 		
 		/**
+		 * 资源目录 
+		 */
+		public var nsadir:String = "";
+		
+		/**
 		 * 默认速度
 		 */
 		public var defaultspeed:Array = [10,5,1];
@@ -164,6 +181,11 @@ package fnscriper
 		 * 选择的默认速度（用!sd设置）
 		 */
 		public var defaultspeedIndex:int = 1;
+		
+		/**
+		 * 回顾颜色 
+		 */
+		public var lookbackcolor:uint = 0xFFFF00;
 		
 		/**
 		 * 文字速度
@@ -229,6 +251,11 @@ package fnscriper
 		 */
 		public var nega:int;
 		
+		public var allsphide:Boolean;
+		
+		public var cursor:Array = [null,null];//{url,x,y,absset};
+		public var mousecursor:String = "";
+		
 		public function setVar(key:String,v:Object):void
 		{
 			var type:String = key.charAt(0);
@@ -243,11 +270,11 @@ package fnscriper
 					if (intlimitmax.hasOwnProperty(index) && v > intlimitmax[index])
 						v = intlimitmax[index];
 					
-					nums[index] = v;
+					nums[index] = int(v);
 					break;
 				case "$":
 					index = int(key.slice(1));
-					strs[index] = v;
+					strs[index] = v.toString();
 					break;
 				case "?":
 					var arr:Array = key.slice(1).split(/[\[\]]+/);
@@ -259,7 +286,7 @@ package fnscriper
 						index = arr.shift();
 						if (arr.length == 0)
 						{
-							result[index] = v;
+							result[index] = int(v);
 						}
 						else 
 						{

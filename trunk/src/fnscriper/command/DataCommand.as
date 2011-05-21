@@ -22,16 +22,38 @@ package fnscriper.command
 		 * 
 		 */
 		[CMD("S")]
-		public function numalias(key:String,value:Object):void
+		public function numalias(key:String,value:int):void
 		{
 			runner.numalias[key] = value;
 		}
 		
 		[CMD("S")]
-		public function mov(key:String,value:Object):void
+		public function mov(key:String,...reg):void
 		{
-			model.setVar(key,value);
+			var type:String = key.charAt(0);
+			var index:int = int(key.slice(1));
+			for (var i:int = 0;i < reg.length;i++)
+				model.setVar(type + (index + i).toString(),reg[i]);
 		}
+		
+		[CMD("S")]
+		public function mov2(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov3(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov4(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov5(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov6(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov7(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov8(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov9(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
+		[CMD("S")]
+		public function mov10(key:String,...reg):void{mov.apply(null,[key].concat(reg))};
 		
 		[CMD("S")]
 		public function movl(key:String,...reg):void
@@ -62,27 +84,30 @@ package fnscriper.command
 		}
 		
 		[CMD("S")]
-		public function add(key:String,value:Number):void
+		public function add(key:String,value:Object):void
 		{
-			model.setVar(key,model.getNumVar(key) + value);
+			if (key.charAt(0) == "$")
+				model.setVar(key,model.getVar(key).toString() + value.toString());
+			else	
+				model.setVar(key,int(model.getVar(key)) + int(value));
 		}		
 		[CMD("S")]
-		public function sub(key:String,value:Number):void
+		public function sub(key:String,value:int):void
 		{
 			model.setVar(key,model.getNumVar(key) - value);
 		}
 		[CMD("S")]
-		public function mul(key:String,value:Number):void
+		public function mul(key:String,value:int):void
 		{
 			model.setVar(key,model.getNumVar(key) * value);
 		}
 		[CMD("S")]
-		public function div(key:String,value:Number):void
+		public function div(key:String,value:int):void
 		{
 			model.setVar(key,int(model.getNumVar(key) / value));
 		}
 		[CMD("S")]
-		public function mod(key:String,value:Number):void
+		public function mod(key:String,value:int):void
 		{
 			model.setVar(key,model.getNumVar(key) % value);
 		}
@@ -102,6 +127,14 @@ package fnscriper.command
 			var byte:ByteArray = new ByteArray();
 			byte.writeMultiByte(v,"gb2312");
 			model.setVar(key,byte.length);
+		}
+		[CMD("  SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")]
+		public function split(v:String,delim:String,...reg):void
+		{
+			var arr:Array = v.split(delim);
+			var len:int = Math.min(reg.length,arr.length);
+			for (var i:int = 0;i < len;i++)
+				model.setVar(reg[i],arr[i]);
 		}
 		[CMD("S")]
 		public function mid(key:String,v:String,start:int,len:int):void

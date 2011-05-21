@@ -1,6 +1,8 @@
 package fnscriper.util
 {
 	import flash.filters.DropShadowFilter;
+	import flash.media.Sound;
+	import flash.media.SoundLoaderContext;
 	import flash.text.TextFormat;
 	
 	import flashx.textLayout.elements.BreakElement;
@@ -130,6 +132,11 @@ package fnscriper.util
 			for (var p:String in o)
 				tf[p] = o[p];
 			return tf;
+		}
+		
+		public static function createSound(url:String,bufferTime:int = 1000):Sound
+		{
+			return new Sound(FNSFacade.instance.asset.getURLRequest(url),new SoundLoaderContext(bufferTime));
 		}
 		
 		public static function readNumber(s:String,startIndex:int):String

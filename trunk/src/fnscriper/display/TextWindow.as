@@ -7,6 +7,9 @@ package fnscriper.display
 	import flash.events.MouseEvent;
 	import flash.events.TimerEvent;
 	import flash.filters.DropShadowFilter;
+	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.media.Sound;
 	import flash.text.AntiAliasType;
 	import flash.text.GridFitType;
 	import flash.text.TextField;
@@ -19,10 +22,8 @@ package fnscriper.display
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSRunner;
 	import fnscriper.FNSVO;
-	import fnscriper.events.TickEvent;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
-	import fnscriper.util.Tick;
 	
 	public class TextWindow extends Sprite
 	{
@@ -30,8 +31,9 @@ package fnscriper.display
 		public var selectedMode:Boolean;
 		
 		public var background:Image;
+		public var cursorimg:Image;
 		
-		public var historyText:Array = [];
+		public var historyList:Array = [];
 		public var historyIndex:int = -1;
 		
 		/**
@@ -58,10 +60,11 @@ package fnscriper.display
 			this.textField = new TextField();
 			this.textField.wordWrap = true;
 			this.textField.selectable = false;
-			this.textField.antiAliasType = AntiAliasType.ADVANCED;
-			this.textField.gridFitType = GridFitType.NONE;
 			this.textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,12,0xFFFFFF);
 			this.addChild(this.textField);
+			
+			this.cursorimg = new Image();
+			this.addChild(this.cursorimg);
 			
 			this.addEventListener(Event.ADDED_TO_STAGE,init);
 		}
@@ -73,7 +76,7 @@ package fnscriper.display
 			background.source = "";
 			selectedMode = false;
 			
-			historyText = [];
+			historyList = [];
 			historyIndex = -1;
 			
 			stopTween();
@@ -81,7 +84,7 @@ package fnscriper.display
 		 
 		private function init(e:Event):void
 		{
-			Tick.instance.addEventListener(TickEvent.TICK,tickHandler);
+			this.addEventListener(Event.ENTER_FRAME,tickHandler);
 			this.addEventListener(MouseEvent.CLICK,clickHandler);
 			stage.addEventListener(MouseEvent.MOUSE_WHEEL,mouseWheelHandler);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN,keyDownHandler);
@@ -95,7 +98,7 @@ package fnscriper.display
 			}
 			else if (event.keyCode == Keyboard.DOWN)
 			{
-				if (historyIndex != -1 && historyIndex < historyText.length - 1)
+				if (historyIndex != -1)
 					showHistory(true);
 				else
 					facade.view.dispatchViewEvent();
@@ -112,45 +115,59 @@ package fnscriper.display
 			{
 				if (historyIndex != -1)
 					showHistory(true);
+				else
+					facade.view.dispatchViewEvent();
 			}
 		}
 		
-		public function showHistory(isDown:Boolean = false):void
+		private var historyCache:Object = {};
+		
+		public function showHistory(isNext:Boolean = false):void
 		{
-			if (historyText.length <= 1 || selectedMode)
+			if (historyList.length == 0 || selectedMode)
 				return;
 			
-			if (!isDown)
+			if (isNext)
+			{
+				historyIndex--;
+				if (historyIndex < 0)
+				{
+					//退出回顾
+					textField.htmlText = historyCache.textField;
+					tweenIndex = historyCache.tweenIndex;
+					text = historyCache.text;
+					
+					tween();
+				}
+			}
+			else
 			{
 				if (historyIndex == -1)
-					historyIndex = historyText.length - 2;//进入回顾
-				else
-					historyIndex--;
-			}
-			else
-			{
-				if (historyIndex != -1)
-					historyIndex++;
+				{
+					//进入回顾
+					historyCache.textField = textField.htmlText;
+					historyCache.tweenIndex = tweenIndex;
+					historyCache.text = text;
+				}
+				historyIndex++;
+				if (historyIndex > historyList.length - 1)
+					historyIndex = historyList.length - 1;
 			}
 			
-			if (historyIndex > historyText.length - 1)
-				historyIndex = historyText.length - 1;
 			
-			if (historyIndex < 0)
-				historyIndex = 0;
-			
-			if (historyIndex == historyText.length - 1)
+			if (historyIndex >= 0)
 			{
-				historyIndex = -1;//取消回顾
-				showText(historyText[historyText.length - 1]);
-			}
-			else
-			{
-				showText(historyText[historyIndex]);
+				textField.text = "";
+				tweenIndex = 0;
+					
+				text = historyList[historyIndex];
+					
+				stopTween();
+				tweenToEnd();
 			}
 		}
 		
-		protected function tickHandler(event:TickEvent):void
+		protected function tickHandler(event:Event):void
 		{
 			if (selectedMode && historyIndex == -1 && facade.runner.isBtnMode)
 			{
@@ -203,7 +220,11 @@ package fnscriper.display
 			if (isNewPage)
 			{
 				isNewPage = false;
-				textField.text = "";
+				
+				var newText:String = text.slice(tweenIndex);
+				text = text.slice(0,tweenIndex);
+				nextPage();
+				text = newText;
 			}
 			
 			if (!selectedMode)
@@ -217,11 +238,16 @@ package fnscriper.display
 					if (tweenIndex < text.length)
 					{
 						tween();
+						if (model.clickvoice[0])
+							FNSUtil.createSound(model.clickvoice[0],0).play();
 					}
 					else
 					{
 						facade.runner.isTextWait = false;
 						facade.runner.doNext();
+						
+						if (model.clickvoice[1])
+							FNSUtil.createSound(model.clickvoice[1],0).play();
 					}
 				}
 			}
@@ -259,14 +285,31 @@ package fnscriper.display
 			}
 		}
 		
+		public function nextPage():void
+		{
+			if (text)
+				historyList.unshift(text);
+			
+			textField.text = "";
+			tweenIndex = 0;
+			
+			text = "";
+		}
+		
 		public function putText(v:String):void
 		{
+			textField.embedFonts = model.embedFonts;
+			
 			historyIndex = -1;
-			historyText.push(v);
-			if (historyText.length > 100)
-				historyText.shift();
-		
-			showText(v);
+			if (model.linepage)
+				nextPage();
+			
+			if (text)
+				text += "\n";
+			
+			text += v;
+			
+			tween();
 		}
 		
 		public function select(list:Array):void
@@ -277,7 +320,10 @@ package fnscriper.display
 		
 		public function textclear():void
 		{
-			showText("");
+			textField.text = "";
+			tweenIndex = 0;
+			
+			tween();
 		}
 		
 		public function locate(x:int = 0,y:int = 0):void
@@ -295,21 +341,11 @@ package fnscriper.display
 			tween();
 		}
 		
-		public function showText(v:String):void
-		{
-			textField.embedFonts = facade.model.embedFonts;
-			text = v;
-			
-			textField.text = "";
-			tweenIndex = 0;
-			
-			tween();
-		}
-		
 		private var tweenTimer:Timer;
-		private var text:String;
+		private var text:String = "";
 		private var tweenIndex:int;
 		private var waitTimer:int;
+		
 		public function tween():void
 		{
 			stopTween();
@@ -338,16 +374,20 @@ package fnscriper.display
 		
 		private function tweenUpdateHandler(e:TimerEvent = null):void
 		{
+			cursorimg.visible = false;
+			
 			var a:String = text.charAt(tweenIndex);
 			if (a == "&")
 			{
-				model.defaultcolor = 0;
+				if (historyIndex == -1)
+					model.defaultcolor = 0;
 				tweenIndex++;
 			}
 			else if (a == "#")
 			{
 				s = text.slice(tweenIndex + 1,tweenIndex + 7);
-				model.defaultcolor = parseInt(s,16);
+				if (historyIndex == -1)
+					model.defaultcolor = parseInt(s,16);
 				tweenIndex += s.length + 1;
 			}
 			else if (text.slice(tweenIndex,tweenIndex + 2) == "!s")
@@ -356,12 +396,14 @@ package fnscriper.display
 				if (text.slice(tweenIndex,tweenIndex + 3) == "!sd")
 				{
 					s = "d";
-					model.textspeed = facade.model.defaultspeed[facade.model.defaultspeedIndex];
+					if (historyIndex == -1)
+						model.textspeed = facade.model.defaultspeed[facade.model.defaultspeedIndex];
 				}
 				else
 				{
 					s = FNSUtil.readNumber(text,tweenIndex + 2);
-					model.textspeed = int(s);
+					if (historyIndex == -1)
+						model.textspeed = int(s);
 				}
 				if (tweenTimer)
 					tweenTimer.delay = model.textspeed;
@@ -371,7 +413,7 @@ package fnscriper.display
 			{
 				s = FNSUtil.readNumber(text,tweenIndex + 2);
 				tweenIndex += s.length + 2;
-				if (!facade.runner.isSkip)
+				if (historyIndex == -1 && !facade.runner.isSkip)
 				{
 					stopTween();
 					facade.runner.isWait = true;
@@ -385,7 +427,7 @@ package fnscriper.display
 			{
 				s = FNSUtil.readNumber(text,tweenIndex + 2);
 				tweenIndex += s.length + 2;
-				if (!facade.runner.isSkip)
+				if (historyIndex == -1 && !facade.runner.isSkip)
 				{
 					stopTween();
 					waitTimer = setTimeout(next,int(s));
@@ -394,35 +436,50 @@ package fnscriper.display
 			else if (a == "@")
 			{
 				tweenIndex++;
-				if (!facade.runner.isSkip)
+				if (historyIndex == -1 && !facade.runner.isSkip)
+				{
+					showCursor(0);
 					stopTween();
+				}
 			}
 			else if (a == "\\")
 			{
 				tweenIndex++;
-				isNewPage = true;
-				if (!facade.runner.isSkip)
+				if (historyIndex == -1)
+					isNewPage = true;
+				if (historyIndex == -1 && !facade.runner.isSkip)
+				{
+					showCursor(1);
 					stopTween();
+				}
 			}
 			else if (a == "_")
 			{
 				tweenIndex++;
-				isIgnoreClickStr = true;
+				if (historyIndex == -1)
+					isIgnoreClickStr = true;
 			}
 			else
 			{
-				isIgnoreClickStr = false;
+				if (historyIndex == -1)
+					isIgnoreClickStr = false;
 				
 				textField.appendText(a);
-				textField.setTextFormat(new TextFormat(model.defaultfont,null,historyIndex != -1 ? 0xFFFF00 : model.defaultcolor),textField.text.length - 1,textField.text.length);
+				textField.setTextFormat(new TextFormat(model.defaultfont,null,historyIndex != -1 ? model.lookbackcolor : model.defaultcolor),textField.text.length - 1,textField.text.length);
 				tweenIndex++;
 				
-				if (model.clickstr.indexOf(a) != -1)
+				if (historyIndex == -1 && model.clickstr.indexOf(a) != -1)
 					stopTween();
 			}
 			
-			if (tweenIndex >= text.length)
+			if (historyIndex == -1 && tweenIndex >= text.length && tweenTimer)
+			{
 				stopTween();
+				if (model.linepage) //未被中断的行末自动读取下一条
+					showCursor(1);	
+				else
+					next();
+			}
 		}
 		
 		public function stopTween():void
@@ -433,6 +490,31 @@ package fnscriper.display
 				tweenTimer.stop();
 				
 				tweenTimer = null;
+			}
+		}
+		
+		public function showCursor(type:int):void
+		{
+			var o:Object = model.cursor[type];
+			if (o)
+			{
+				var rect:Rectangle = textField.getCharBoundaries(textField.text.length - 1);
+				if (rect)
+				{
+					cursorimg.visible = true;
+					cursorimg.source = o.url;
+					cursorimg.x = int(o.x);
+					cursorimg.y = int(o.y);
+					if (o.absset != 1)
+					{
+						cursorimg.x += int(o.x) + rect.x + textField.x + int(textField.defaultTextFormat.size);
+						cursorimg.y += int(o.y) + rect.y + textField.y;
+					}
+				}
+			}
+			else
+			{
+				cursorimg.visible = false;
 			}
 		}
 	}

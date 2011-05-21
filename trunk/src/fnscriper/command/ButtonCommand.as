@@ -6,6 +6,7 @@ package fnscriper.command
 		[CMD("S")]
 		public function btnwait(v:String,isClear:Boolean = true):void
 		{
+			view.invalidateRender();
 			runner.isWait = runner.isBtnMode = true;
 			view.addViewHandler(completeHandler);
 			

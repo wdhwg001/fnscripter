@@ -13,6 +13,8 @@ package fnscriper
 	import flash.filters.BitmapFilter;
 	import flash.filters.ColorMatrixFilter;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.globalization.Collator;
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.media.SoundLoaderContext;
@@ -21,6 +23,7 @@ package fnscriper
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.Keyboard;
+	import flash.ui.Mouse;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
 	import flash.utils.clearTimeout;
@@ -29,14 +32,12 @@ package fnscriper
 	
 	import flashx.textLayout.elements.BreakElement;
 	
-	import fnscriper.command.EffectFuns;
+	import fnscriper.command.EffectFunctions;
 	import fnscriper.display.GVideo;
 	import fnscriper.display.Image;
 	import fnscriper.display.TextWindow;
-	import fnscriper.events.TickEvent;
 	import fnscriper.events.ViewEvent;
-	import fnscriper.util.Tick;
-	import fnscriper.util.TweenUtil;
+	import fnscriper.util.FNSUtil;
 	
 	[Event(name="view_click", type="fnscriper.events.ViewEvent")]
 	public class FNSView extends Sprite
@@ -55,6 +56,7 @@ package fnscriper
 		public var btndef:Loader;
 		public var btn:Object = {};
 		public var blt:Image;
+		public var mousecursorimg:Image;
 		
 		public var bgmSound:Sound;
 		public var bgmChannel:SoundChannel;
@@ -84,7 +86,7 @@ package fnscriper
 			this.graphics.drawRect(0,0,w,h);
 			this.graphics.endFill();
 			
-			this.screen = new BitmapData(w,h,false,0x0)
+			this.screen = new BitmapData(w,h,false,0)
 			this.screenbm = new Bitmap(this.screen	,"auto",true);
 			this.addChild(this.screenbm);
 			
@@ -93,6 +95,10 @@ package fnscriper
 			
 			this.background = new Image();
 			this.background.transparenceMode = "c";
+			this.background.id = "b";
+			
+			this.mousecursorimg = new Image();
+			addChild(this.mousecursorimg);
 			
 			var menu:ContextMenu = new ContextMenu();
 			menu.hideBuiltInItems();
@@ -112,10 +118,28 @@ package fnscriper
 		{
 			this.removeEventListener(Event.ADDED_TO_STAGE,initHandler);
 			
+			addEventListener(Event.ENTER_FRAME,tickHandler);
 			stage.addEventListener(MouseEvent.CLICK,clickHandler);
 			stage.addEventListener(MouseEvent.MOUSE_MOVE,mouseOverHandler);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN,keyDownHandler);
 			stage.addEventListener(KeyboardEvent.KEY_UP,keyUpHandler);
+		}
+		
+		private function tickHandler(e:Event):void
+		{
+			if (facade.model.mousecursor)
+			{
+				mousecursorimg.visible = true;
+				mousecursorimg.x = mouseX;
+				mousecursorimg.y = mouseY;
+				
+				Mouse.hide();
+			}
+			else
+			{
+				mousecursorimg.visible = false;
+				Mouse.show();
+			}
 		}
 		
 		private function copyrightHandler(e:ContextMenuEvent):void
@@ -215,7 +239,11 @@ package fnscriper
 			clearTimeout(renderTimer);
 			refreshDirty = false;
 			
+			screen.lock();
 			screen.fillRect(screen.rect,0);
+			if (facade.model.allsphide)
+				return;
+			
 			background.renderToBitmapData(screen);
 			
 			for each (var img:Image in sp)
@@ -223,6 +251,9 @@ package fnscriper
 				if (img && img.visible)
 					img.renderToBitmapData(screen);
 			}
+			
+			screenfilter(facade.model.monocro,facade.model.nega);
+			screen.unlock();
 		}
 		
 		public function loadFromVO():void
@@ -262,14 +293,15 @@ package fnscriper
 			if (model.blt)
 				addBlt(model.blt);
 			
+			mousecursorimg.source = model.mousecursor;
 			background.source = model.bg;
 			textWindow.setWindow(model.textwindow);
 			textWindow.visible = model.texton;
 			
-			screenfilter(model.monocro,model.nega);
+			render();
 			
 			facade.model.step--;
-			facade.runner.isWait = false;
+			facade.runner.isWait = facade.runner.isBtnMode = facade.runner.isTextWait = false;
 			facade.runner.doNext();
 		}
 		
@@ -282,12 +314,12 @@ package fnscriper
 			}
 			sp = {};
 			
+			mousecursorimg.source = "";
 			background.source = "";
 			textWindow.clear();
 			btnclear();
 			
 			handlers = new Dictionary();
-			screenbm.filters = [];
 			
 			stop();
 		}
@@ -305,46 +337,55 @@ package fnscriper
 					render();
 					break;
 				case 2:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect2,len);
 					break;
 				case 3:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect3,len);
 					break;
 				case 4:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect4,len);
 					break;
 				case 5:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect5,len);
 					break;
 				case 6:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect6,len);
 					break;
 				case 7:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect7,len);
 					break;
 				case 8:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect8,len);
 					break;
 				case 9:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect9,len);
 					break;
 				case 10:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect10,len);
+					break;
+				case 11:
+					showEffect(EffectFunctions.effect11,len);
 					break;
 				case 12:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect12,len);
 					break;
 				case 13:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect13,len);
 					break;
 				case 14:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect14,len);
 					break;
 				case 15:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect15,len,img);
 					break;
 				case 16:
-					showEffect(EffectFuns.effect10,len,img);
+					showEffect(EffectFunctions.effect16,len);
+					break;
+				case 17:
+					showEffect(EffectFunctions.effect17,len);
+					break;
+				case 18:
+					showEffect(EffectFunctions.effect18,len,img);
 					break;
 			}
 		}
@@ -352,6 +393,8 @@ package fnscriper
 		private function showEffect(renderFun:Function,len:int,img:String = ""):void
 		{
 			facade.runner.isWait = true;
+			if (facade.model.erasetextwindow == 1)
+				facade.view.textWindow.visible = false;
 			
 			var oldbmd:BitmapData = screen.clone();
 			var effectbmd:BitmapData = screen.clone();
@@ -360,20 +403,32 @@ package fnscriper
 			var t:int = getTimer();
 			addEventListener(Event.ENTER_FRAME,tickHandler);
 			
+			if (img)
+			{
+				var maskImg:Image = new Image();
+				maskImg.source = img;
+			}
+			
 			function tickHandler(e:Event):void
 			{
 				var percent:Number = (getTimer() - t) / len;
 				if (percent > 1.0)
 					percent = 1.0;
 				
-				renderFun(effectbmd,oldbmd,screen,percent);
+				renderFun(effectbmd,oldbmd,screen,percent,maskImg);
 				
 				if (getTimer() - t > len + facade.model.effectblank)
 				{
 					screenbm.bitmapData = screen;
 					oldbmd.dispose();
 					effectbmd.dispose();
+					if (maskImg)
+						maskImg.destory();
+					
 					removeEventListener(Event.ENTER_FRAME,tickHandler);
+					
+					if (facade.model.erasetextwindow == 1)
+						facade.view.textWindow.visible = facade.model.texton;
 					
 					facade.runner.isWait = false;
 					facade.runner.doNext();
@@ -419,7 +474,7 @@ package fnscriper
 			}
 		}
 		
-		public function screenfilter(monocro:String,nega:int):void
+		private function screenfilter(monocro:String,nega:int):void
 		{
 			var list:Array = [];
 			if (monocro && monocro.charAt(0) == "#")
@@ -449,7 +504,11 @@ package fnscriper
 					list.push(fnega)
 			}
 			
-			this.screenbm.filters = list;
+			for each (var filter:ColorMatrixFilter in list)
+			{
+				this.screen.applyFilter(this.screen,this.screen.rect,new Point(),filter);
+			}
+//			this.screenbm.filters = list;
 		}
 		
 		public function lsp(index:String,url:String,x:int = 0,y:int = 0,alpha:int = 100):void
@@ -536,7 +595,7 @@ package fnscriper
 		{
 			bgmstop();
 			
-			var sound:Sound = new Sound(facade.asset.getURLRequest(url),new SoundLoaderContext(1000));
+			var sound:Sound = FNSUtil.createSound(url);
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			bgmSound = sound;
 			bgmChannel = sound.play(0,loops);
@@ -564,7 +623,7 @@ package fnscriper
 		{
 			dwavestop(index);
 			
-			var sound:Sound = new Sound(facade.asset.getURLRequest(url),new SoundLoaderContext(0));
+			var sound:Sound = FNSUtil.createSound(url,0);
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			dwaveSound[index] = sound;
 		}

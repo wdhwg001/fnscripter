@@ -25,9 +25,9 @@ package fnscriper.command
 			model.humanz = v;
 		}
 		
-		public function print(effect:int = 0,length:int = 0,img:String = ""):void
+		public function bgalia(x:int,y:int,w:int,h:int):void
 		{
-			view.print(effect,length,img);
+			model.bgalia = {x:x,y:y,w:w,h:h};
 		}
 		
 		/**
@@ -42,7 +42,7 @@ package fnscriper.command
 			model.bg = url;
 			view.bg(url);
 			if (effect != -1)
-				print(effect,len,img);
+				view.print(effect,len,img);
 		}
 		
 		/**
@@ -56,7 +56,7 @@ package fnscriper.command
 		{
 			lsp(index,url);
 			if (effect != -1)
-				print(effect,len,img);
+				view.print(effect,len,img);
 		}
 			
 		/**
@@ -286,12 +286,12 @@ package fnscriper.command
 		
 		public function allsphide():void
 		{
-			view.screenbm.visible = false;
+			model.allsphide = true;
 		}
 		
 		public function allspresume():void
 		{
-			view.screenbm.visible = true;
+			model.allsphide = false;
 		}
 	}
 }

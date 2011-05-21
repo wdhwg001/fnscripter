@@ -14,6 +14,19 @@ package fnscriper.command
 			model.effectblank = v;
 		}
 		
+		public function print(effect:int = 0):void
+		{
+			if (effect <= 1)
+			{
+				view.print(effect);
+			}
+			else
+			{
+				var index:int = effect;
+				view.print(model.effect[index],model.effectlen[index],model.effectimg[index]);
+			}
+		}
+		
 		public function quake(num:int,len:int):void
 		{
 			view.quake(num,len,0);
@@ -32,13 +45,11 @@ package fnscriper.command
 		public function monocro(v:String):void
 		{
 			model.monocro = v;
-			view.screenfilter(model.monocro,model.nega);
 		}
 		
 		public function nega(v:int):void
 		{
 			model.nega = v;
-			view.screenfilter(model.monocro,model.nega);
 		}
 	}
 }

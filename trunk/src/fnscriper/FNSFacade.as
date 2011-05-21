@@ -20,7 +20,9 @@ package fnscriper
 	{
 		static public var instance:FNSFacade;
 		
-		public var charset:String = "utf-8";
+		public var charset:String = "utf-8";//gb2312
+		public var gameurl:String = "";
+		
 		public var asset:FNSAsset;
 		public var view:FNSView;
 		public var runner:FNSRunner;
@@ -29,7 +31,9 @@ package fnscriper
 		{
 			FNSFacade.instance = this;
 			
-			this.asset = new FNSAsset();
+			this.loadParams();
+			
+			this.asset = new FNSAsset(gameurl);
 			this.model = new FNSVO();
 			
 			this.view = new FNSView();
@@ -39,6 +43,15 @@ package fnscriper
 			
 			this.loadDatFile();
 			this.loadFontFile();
+		}
+		
+		private function loadParams():void
+		{
+			for (var p:String in this.loaderInfo.parameters)
+			{
+				if (this.hasOwnProperty(p))
+					this[p] = this.loaderInfo.parameters[p];
+			}
 		}
 		
 		public function loadDatFile(url:URLRequest = null):void

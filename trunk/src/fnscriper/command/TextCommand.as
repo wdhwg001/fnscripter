@@ -25,6 +25,11 @@ package fnscriper.command
 			model.shadedistanceY = y;
 		}
 		
+		public function linepage():void
+		{
+			model.linepage = true;
+		}
+		
 		public function texton():void
 		{
 			view.textWindow.visible = model.texton = true;
@@ -101,7 +106,7 @@ package fnscriper.command
 			model.clickstr = str;
 		}
 		
-		public function clickvoice(v1:String,v2:String):void
+		public function clickvoice(v1:String = "",v2:String = ""):void
 		{
 			model.clickvoice = [v1,v2];
 		}
@@ -189,6 +194,21 @@ package fnscriper.command
 			p = view.globalToLocal(view.textWindow.textField.localToGlobal(p));
 			model.setVar(x,p.x);
 			model.setVar(y,p.y);
+		}
+		
+		public function lookbackcolor(v:String):void
+		{
+			if (v.charAt(0) == "#")
+				model.lookbackcolor = parseInt(v.slice(1),16);
+		}
+		
+		public function setcursor(type:int,url:String,x:int = 0,y:int = 0):void
+		{
+			model.cursor[type] = {url:url,x:int,y:int,absset:0};
+		}
+		public function abssetcursor(type:int,url:String,x:int = 0,y:int = 0):void
+		{
+			model.cursor[type] = {url:url,x:int,y:int,absset:1}
 		}
 	}
 }
