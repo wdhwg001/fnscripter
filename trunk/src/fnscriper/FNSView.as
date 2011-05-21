@@ -18,6 +18,7 @@ package fnscriper
 	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.media.SoundLoaderContext;
+	import flash.media.SoundTransform;
 	import flash.net.URLRequest;
 	import flash.net.navigateToURL;
 	import flash.ui.ContextMenu;
@@ -246,7 +247,7 @@ package fnscriper
 			
 			background.renderToBitmapData(screen);
 			
-			for each (var img:Image in sp)
+			for each (var img:Image in spCanvas)
 			{
 				if (img && img.visible)
 					img.renderToBitmapData(screen);
@@ -598,7 +599,7 @@ package fnscriper
 			var sound:Sound = FNSUtil.createSound(url);
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			bgmSound = sound;
-			bgmChannel = sound.play(0,loops);
+			bgmChannel = sound.play(0,loops,new SoundTransform(facade.model.defmp3vol / 100));
 		}
 		
 		public function bgmstop():void
@@ -631,7 +632,7 @@ package fnscriper
 		public function dwaveplay(index:int,loops:int = 1):void
 		{
 			var sound:Sound = dwaveSound[index];
-			dwaveChannel[index] = sound.play(0,loops);
+			dwaveChannel[index] = sound.play(0,loops,new SoundTransform(index == 0 ? facade.model.defvoicecol / 100 : facade.model.defsevol / 100));
 		}
 		
 		public function dwave(index:int,url:String,loops:int = 1):void

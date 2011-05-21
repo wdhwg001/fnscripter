@@ -4,6 +4,7 @@ package fnscriper.command
 	import flash.geom.Rectangle;
 	import flash.text.TextField;
 	
+	import fnscriper.display.Image;
 	import fnscriper.events.ViewEvent;
 
 	public class TextCommand extends CommandBase
@@ -33,11 +34,29 @@ package fnscriper.command
 		public function texton():void
 		{
 			view.textWindow.visible = model.texton = true;
+			if (model.mode_saya)
+			{
+				for (var i:int = 1;i <= 9;i++)
+				{
+					var p:Image = view.getsp(i.toString());
+					if (p)
+						p.visible = true;
+				}
+			}
 		}
 		
 		public function textoff():void
 		{
 			view.textWindow.visible = model.texton = false;
+			if (model.mode_saya)
+			{
+				for (var i:int = 1;i <= 9;i++)
+				{
+					var p:Image = view.getsp(i.toString());
+					if (p)
+						p.visible = false;
+				}
+			}
 		}
 		
 		public function erasetextwindow(v:int):void
@@ -209,6 +228,11 @@ package fnscriper.command
 		public function abssetcursor(type:int,url:String,x:int = 0,y:int = 0):void
 		{
 			model.cursor[type] = {url:url,x:int,y:int,absset:1}
+		}
+		
+		public function mode_saya():void
+		{
+			model.mode_saya = true;
 		}
 	}
 }

@@ -11,6 +11,18 @@ package fnscriper.command
 
 	public class SoundCommand extends CommandBase
 	{
+		public function defvoicecol(v:int):void
+		{
+			model.defvoicecol = v;
+		}
+		public function defsevol(v:int):void
+		{
+			model.defsevol = v;
+		}
+		public function defmp3vol(v:int):void
+		{
+			model.defmp3vol = v;
+		}
 		public function stop():void
 		{
 			view.stop();

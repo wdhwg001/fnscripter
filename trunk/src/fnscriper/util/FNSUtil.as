@@ -168,5 +168,10 @@ package fnscriper.util
 			}
 			return s.slice(startIndex,index)
 		}
+		
+		public static function readLine(line:String):String
+		{
+			return line.replace(/^\s+/,"").replace(/;[^"]*$/,"");
+		}
 	}
 }

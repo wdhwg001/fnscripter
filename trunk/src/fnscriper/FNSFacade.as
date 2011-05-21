@@ -14,6 +14,7 @@ package fnscriper
 	import flash.ui.ContextMenuItem;
 	import flash.utils.ByteArray;
 	
+	import fnscriper.display.ProgressBar;
 	import fnscriper.util.OperatorUtil;
 
 	public class FNSFacade extends Sprite
@@ -31,6 +32,13 @@ package fnscriper
 		{
 			FNSFacade.instance = this;
 			
+			this.addEventListener(Event.ADDED_TO_STAGE,initHandler);
+		}
+		
+		protected function initHandler(event:Event):void
+		{
+			this.removeEventListener(Event.ADDED_TO_STAGE,initHandler);
+			
 			this.loadParams();
 			
 			this.asset = new FNSAsset(gameurl);
@@ -42,7 +50,7 @@ package fnscriper
 			this.runner = new FNSRunner();
 			
 			this.loadDatFile();
-			this.loadFontFile();
+			this.loadFontFile();	
 		}
 		
 		private function loadParams():void
@@ -62,6 +70,11 @@ package fnscriper
 			var loader:URLLoader = new URLLoader(url);
 			loader.dataFormat = URLLoaderDataFormat.BINARY;
 			loader.addEventListener(Event.COMPLETE,loadDatFileCompleteHandler);
+			
+			var progressBar:ProgressBar = new ProgressBar(loader);
+			progressBar.x = stage.stageWidth / 2;
+			progressBar.y = stage.stageHeight / 2;
+			addChild(progressBar);
 		}
 		
 		protected function loadDatFileCompleteHandler(event:Event):void

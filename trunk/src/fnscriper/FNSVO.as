@@ -256,6 +256,12 @@ package fnscriper
 		public var cursor:Array = [null,null];//{url,x,y,absset};
 		public var mousecursor:String = "";
 		
+		public var mode_saya:Boolean;
+		
+		public var defvoicecol:int = 100;
+		public var defsevol:int = 100;
+		public var defmp3vol:int = 100;
+		
 		public function setVar(key:String,v:Object):void
 		{
 			var type:String = key.charAt(0);
