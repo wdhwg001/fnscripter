@@ -6,6 +6,7 @@ package fnscriper
 	import flash.utils.describeType;
 	import flash.utils.setTimeout;
 	
+	import flashx.textLayout.debug.assert;
 	import flashx.textLayout.elements.BreakElement;
 	import flashx.textLayout.elements.ListElement;
 	
@@ -132,36 +133,20 @@ package fnscriper
 		{
 			for (var i:int = 0;i < data.length;i++)
 			{
-				var line:String = data[i];
-				line = line.replace(/^\s+/,"").replace(/;[^"]*$/,"");
+				var line:String = FNSUtil.readLine(data[i]);
 				if (line.charAt(0) == "*")
 				{
 					var value:String = line.slice(1);
 					labels[value] = i;
-					continue;
-				}
-				
-				var arr:Array = line.split(/\s+/);
-				var cmd:String = arr.shift();
-				value = arr.join();
-				if (cmd)
-				{
-					var params:Array = FNSUtil.split(value,",");
-					if (cmd == "defsub")
-						defsubs[params[0]] = true;
-					else if (cmd == "stralias")
-						stralias[params[0]] = params[1].toString().slice(1,params[1].toString().length - 1);
-					else if (cmd == "numalias")
-						numalias[params[0]] = int(params[1]).toString();
 				}
 			}
 		}
 		
 		public function run():void
 		{
-			var origin:String = data[model.step];
-			trace(origin);
-			origin = origin.replace(/^\s+/,"").replace(/;[^"]*$/,"");
+			FNSFacade.instance.asset.startLoad();
+			
+			var origin:String = FNSUtil.readLine(data[model.step]);
 			var lines:Array = FNSUtil.split(origin,":");
 			for each (var line:String in lines)
 			{
@@ -404,7 +389,7 @@ package fnscriper
 			view.clear();
 			
 			isWait = isBtnMode = isTextWait = isSkip = false;
-			game();
+			goto("*define");
 		}
 	}
 }
