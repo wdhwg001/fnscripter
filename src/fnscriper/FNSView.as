@@ -663,7 +663,6 @@ package fnscriper
 			var video:GVideo = new GVideo(contentWidth,contentHeight);
 			video.load(FNSFacade.instance.asset.getURLRequest(url).url);
 			video.addEventListener(Event.COMPLETE,completeHandler);
-			video.play();
 			addChild(video);
 			
 			if (haltable)
@@ -673,6 +672,7 @@ package fnscriper
 			{
 				removeViewHandler(completeHandler);
 				video.removeEventListener(Event.COMPLETE,completeHandler);
+				video.destory();
 				removeChild(video);
 				
 				FNSFacade.instance.runner.isWait = false;

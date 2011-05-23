@@ -171,7 +171,25 @@ package fnscriper.util
 		
 		public static function readLine(line:String):String
 		{
-			return line.replace(/^\s+/,"").replace(/;[^"]*$/,"");
+			var p:int = 0;
+			var result:String = "";
+			while (p < line.length && (line.charAt(p) == " " || line.charAt(p) == "\t"))
+				p++;
+			
+			var inQ:Boolean;
+			while (p < line.length)
+			{
+				var ch:String = line.charAt(p);
+				if (!inQ && ch == ";")
+					break;
+				
+				if (ch == "\"")
+					inQ = !inQ;
+					
+				result += line.charAt(p);
+				p++;
+			}
+			return result;
 		}
 	}
 }

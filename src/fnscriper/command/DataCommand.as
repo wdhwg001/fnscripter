@@ -180,7 +180,7 @@ package fnscriper.command
 		[CMD("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")]
 		public function getparam(...arr):void
 		{
-			var params:Array = FNSUtil.split(model.callLayerParam[model.callLayerParam.length - 1],",");
+			var params:Array = FNSUtil.split(model.callStack[model.callStack.length - 1].params,",");
 			params = runner.decodeParams(null,params)
 			for (var i:int = 0;i < arr.length;i++)
 				model.setVar(arr[i],params[i]);

@@ -83,6 +83,7 @@ package fnscriper
 				"defsub":defsub,
 				"break":forbreak,
 				"next":fornext,
+				"gosub":gosub,
 				"return":subreturn,
 				"reset":reset
 			};
@@ -147,9 +148,11 @@ package fnscriper
 			FNSFacade.instance.asset.startLoad();
 			
 			var origin:String = FNSUtil.readLine(data[model.step]);
+			trace(origin);
 			var lines:Array = FNSUtil.split(origin,":");
-			for each (var line:String in lines)
+			while (model.step2 < lines.length)
 			{
+				var line:String = lines[model.step2];
 				if (line.length && line.charAt(0) != "*" && line.charAt(0) != "~")
 				{
 					if (line.slice(0,3) == "if ") //条件判断
@@ -174,7 +177,7 @@ package fnscriper
 						break;
 					}
 					
-					var arr:Array = line.split(/\s+/);
+					var arr:Array = FNSUtil.split(line," ");
 					var cmd:String = arr.shift();
 					var value:String = arr.join();
 					if (cmd)
@@ -189,10 +192,12 @@ package fnscriper
 								params = decodeParams(cmd,FNSUtil.split(value,","));
 							
 							runCommand(cmd,params);
+							if (cmd == "return")
+								return;
 						}
 						else if (defsubs.hasOwnProperty(cmd))
 						{
-							gosub(cmd,value);
+							gosub("*" + cmd,value);
 							break;
 						}
 						else
@@ -201,7 +206,9 @@ package fnscriper
 						}
 					}
 				}
+				model.step2++;
 			}
+			model.step2 = 0;
 		}
 		
 		public function runCommand(cmd:String,params:Array = null):void
@@ -267,15 +274,17 @@ package fnscriper
 		
 		public function gosub(subName:String,value:String = null):void
 		{
-			model.callLayer.push(model.step);
-			model.callLayerParam.push(value);
-			goto("*"+subName);
+			model.callStack.push({step:model.step,step2:model.step2,params:value});
+			goto(subName);
 		}
 		
 		public function subreturn():void
 		{
-			model.callLayerParam.pop();
-			model.step = model.callLayer.pop();
+			var o:Object = model.callStack.pop();
+			model.step = o.step;
+			model.step2 = o.step2;
+			model.step--;
+			model.step2++;
 		}
 		
 		
@@ -288,13 +297,13 @@ package fnscriper
 		{
 			var arr:Array = v.split(" ");
 			var end:int;
-			var step:int = 1;
-			var n:int = arr.pop();
+			var forstep:int = 1;
+			var n:int = int(FNSUtil.decodeNumber(arr.pop()));
 			var sys:String = arr.pop();
 			if (sys == "step")
 			{
-				step = n;
-				n = arr.pop();
+				forstep = n;
+				n = int(FNSUtil.decodeNumber(arr.pop()));
 				sys = arr.pop();
 				if (sys == "to")
 					end = n;
@@ -308,41 +317,37 @@ package fnscriper
 			
 			arr = arr.join().split("=");
 			var param:String = arr[0];
-			var start:int = arr[1];
+			var start:int = int(FNSUtil.decodeNumber(arr[1]));
 			
 			model.setVar(param,start);
-			model.forLayer.push(model.step);
-			model.forLayerParam.push([param,end,step].join(","));
+			model.forStack.push({step:model.step,param:param,end:end,forstep:forstep});
 		}
 		
 		public function fornext():void
 		{
-			var params:Array = model.forLayerParam[model.forLayerParam.length - 1].toString().split(",");
-			var index:int = model.getNumVar(params[0]);
-			var end:int = params[1];
-			var step:int = params[2];
-			if (int(step) > 0 ? (index <= end) : (index >= end))
+			var params:Object = model.forStack[model.forStack.length - 1];
+			var index:int = model.getNumVar(params.param);
+			var end:int = params.end;
+			var forstep:int = params.forstep;
+			if (int(forstep) > 0 ? (index <= end) : (index >= end))
 			{
-				model.setVar(params[0],index + int(step));
-				model.step = model.forLayer[model.forLayer.length - 1];
+				model.setVar(params.param,index + int(forstep));
+				model.step = params.step;
 			}
 			else
 			{
-				model.forLayer.pop();
-				params.pop();
+				model.forStack.pop();
 			}
 		}
 		
 		public function forbreak():void
 		{
-			model.forLayer.pop();
-			var params:Array = model.forLayerParam[model.forLayerParam.length - 1].toString().split(",");
-			params.pop();
+			model.forStack.pop();
 			var depth:int = 1;
 			do
 			{
 				model.step++;
-				var line:String = data[model.step];
+				var line:String = FNSUtil.readLine(data[model.step]);
 				if (line.slice(0,4) == "for ")
 					depth++;
 				if (line == "next")

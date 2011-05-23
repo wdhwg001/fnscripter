@@ -274,15 +274,9 @@ package fnscriper.display
 			background.x = x;
 			background.y = y;
 			if (v.charAt(0)=="#")
-			{
-				var c:uint = parseInt(v.slice(1),16);
-				var bmd:BitmapData = new BitmapData(r - x,b - y,false,c);
-				background.loadBitmapData(bmd);
-			}
+				background.loadRect(r - x,b - y,parseInt(v.slice(1),16))
 			else
-			{
 				background.source = v;
-			}
 		}
 		
 		public function nextPage():void

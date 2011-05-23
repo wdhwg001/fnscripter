@@ -25,7 +25,6 @@ package fnscriper.command
 		public function lookbackvoice(...reg):void{}
 		public function effectcut(...reg):void{}
 		public function kidokuskip(...reg):void{}
-		public function mode800(...reg):void{}
 		public function versionstr(...reg):void{}
 		public function caption(...reg):void{}
 		public function killmenu(...reg):void{}

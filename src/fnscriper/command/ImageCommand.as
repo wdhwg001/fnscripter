@@ -64,7 +64,7 @@ package fnscriper.command
 		 * @param index
 		 * 
 		 */
-		public function cl(index:String):void
+		public function cl(index:String = ""):void
 		{
 			if (index == "a")
 			{
@@ -268,12 +268,12 @@ package fnscriper.command
 			model.setVar(hField,v.height);
 		}
 		
-		public function avi(v:String,haltable:int):void
+		public function avi(v:String,haltable:int = 0):void
 		{
 			mpegplay(v,haltable);
 		}
 		
-		public function mpegplay(v:String,haltable:int):void
+		public function mpegplay(v:String,haltable:int = 0):void
 		{
 			runner.isWait = true;
 			view.mpegplay(v,haltable);

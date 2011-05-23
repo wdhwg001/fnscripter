@@ -29,8 +29,6 @@ package fnscriper.display
 	import fnscriper.FNSVO;
 	import fnscriper.FNSView;
 	import fnscriper.util.FNSUtil;
-	
-	import org.osmf.events.TimeEvent;
 
 	public class Image extends Bitmap
 	{
@@ -205,9 +203,7 @@ package fnscriper.display
 			
 			if (v.charAt(0) == "#")
 			{
-				var bmd:BitmapData = new BitmapData(FNSFacade.instance.view.contentWidth,FNSFacade.instance.view.contentHeight,false,parseInt(v.slice(1),16));
-				loadBitmapData(bmd);
-				autoLayout();
+				loadRect(FNSFacade.instance.view.contentWidth,FNSFacade.instance.view.contentHeight,parseInt(v.slice(1),16));
 			}
 			else
 			{
@@ -218,18 +214,6 @@ package fnscriper.display
 				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loadCompleteHandler);
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadCompleteHandler);
 			}
-		}
-		
-		public function loadBytes(bytes:ByteArray):void
-		{
-			this.haltLoad();
-			this.disposeBitmapDataSource();
-			
-			_cellIndex = -1;
-			
-			loader = new Loader();
-			loader.loadBytes(bytes);
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadCompleteHandler);
 		}
 		private function loadCompleteHandler(event:Event):void
 		{
@@ -257,6 +241,17 @@ package fnscriper.display
 			loader.unload();
 			loader = null;
 			
+			this.cellIndex = 0;
+			this.autoScale();
+			this.autoLayout();
+		}
+		
+		public function loadRect(w:int,h:int,c:uint):void
+		{
+			this.disposeBitmapDataSource();
+			
+			var bmd:BitmapData = new BitmapData(w,h,false,c);
+			this.bitmapDataSource = [bmd];
 			this.cellIndex = 0;
 			this.autoLayout();
 		}
@@ -289,7 +284,9 @@ package fnscriper.display
 			this.disposeBitmapDataSource();
 			
 			if (btndef.content is Bitmap)
+			{
 				completeHandler(null);
+			}
 			else
 			{
 				_cellIndex = -1;
@@ -306,6 +303,8 @@ package fnscriper.display
 				bitmapDataSource = [bmd1,bmd2];
 				animLength = 2;
 				cellIndex = 0;
+				
+				autoScale();
 				autoLayout();
 			}
 		}
@@ -339,15 +338,6 @@ package fnscriper.display
 				
 				autoLayout();
 			}
-		}
-		
-		public function loadBitmapData(bmd:BitmapData):void
-		{
-			this.disposeBitmapDataSource();
-			
-			this.bitmapDataSource = [bmd];
-			this.cellIndex = 0;
-			this.autoLayout();
 		}
 		
 		private var frameTime:int;
@@ -427,6 +417,12 @@ package fnscriper.display
 			catch(error:Error) 
 			{
 			}
+		}
+		
+		private function autoScale():void
+		{
+			this.scaleX *= facade.model.imgscale;
+			this.scaleY *= facade.model.imgscale; 
 		}
 		
 		private function autoLayout():void

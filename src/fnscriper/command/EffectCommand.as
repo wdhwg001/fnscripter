@@ -14,7 +14,7 @@ package fnscriper.command
 			model.effectblank = v;
 		}
 		
-		public function print(effect:int = 0):void
+		public function print(effect:int = 0,len:int = 0,img:String = ""):void
 		{
 			if (effect <= 1)
 			{
@@ -23,7 +23,10 @@ package fnscriper.command
 			else
 			{
 				var index:int = effect;
-				view.print(model.effect[index],model.effectlen[index],model.effectimg[index]);
+				if (len)
+					view.print(index,len,img);
+				else
+					view.print(model.effect[index],model.effectlen[index],model.effectimg[index]);
 			}
 		}
 		

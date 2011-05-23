@@ -218,5 +218,15 @@ package fnscriper.command
 			model.mousecursor = v;
 			view.mousecursorimg.source = v;
 		}
+		
+		public function mode800(...reg):void
+		{
+			model.imgscale = 1;
+		}
+		
+		public function mode360(...reg):void
+		{
+			model.imgscale = 1 / 360 * 800;
+		}
 	}
 }
