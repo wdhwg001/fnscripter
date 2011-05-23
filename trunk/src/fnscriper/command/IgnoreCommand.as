@@ -28,5 +28,9 @@ package fnscriper.command
 		public function versionstr(...reg):void{}
 		public function caption(...reg):void{}
 		public function killmenu(...reg):void{}
+		public function bar(...reg):void{};
+		public function prnum(...reg):void{};
+		public function barclear(...reg):void{};
+		public function prnumclear(...reg):void{};
 	}
 }
