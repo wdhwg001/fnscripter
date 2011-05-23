@@ -70,7 +70,7 @@ package fnscriper
 		
 		private function refreshIndex():void
 		{
-			if (model.callLayer.length == 0 && (model.step < startIndex || model.step > endIndex))
+			if (model.callStack.length == 0 && (model.step < startIndex || model.step > endIndex))
 				startIndex = endIndex = model.step;
 		}
 		
@@ -122,8 +122,6 @@ package fnscriper
 				loader.addEventListener(Event.COMPLETE,completeHandler);
 				loader.addEventListener(IOErrorEvent.IO_ERROR,completeHandler);
 			}
-			
-			trace(urls);
 			
 			function completeHandler(e:Event):void
 			{

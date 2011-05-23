@@ -38,23 +38,18 @@ package fnscriper
 		 */
 		public var step:int = 0;
 		/**
+		 * 缓存返回时候的横向位标
+		 */
+		public var step2:int = 0;
+		/**
 		 * 调用堆
 		 */
-		public var callLayer:Array = [];
-		/**
-		 * 调用堆参数
-		 */
-		public var callLayerParam:Array = [];
+		public var callStack:Array = [];//{step,step2,params}
 		
 		/**
 		 * 循环堆
 		 */
-		public var forLayer:Array = [];
-		/**
-		 * 循环堆参数
-		 */
-		public var forLayerParam:Array = [];
-		
+		public var forStack:Array = [];//{step,param,end,forstep}
 		
 		/**
 		 * 字体 
@@ -261,6 +256,11 @@ package fnscriper
 		public var defvoicecol:int = 100;
 		public var defsevol:int = 100;
 		public var defmp3vol:int = 100;
+		
+		/**
+		 * 图片缩放 
+		 */
+		public var imgscale:Number = 1.0;
 		
 		public function setVar(key:String,v:Object):void
 		{

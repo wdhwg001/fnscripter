@@ -62,12 +62,15 @@ package fnscriper
 			}
 		}
 		
-		public function loadDatFile(url:URLRequest = null):void
+		public function loadDatFile():void
 		{
-			if (!url)
-				url = new URLRequest("0.txt");
+			var url:String = gameurl;
+			if (url && url.charAt(url.length - 1) != "/" && url.charAt(url.length - 1) != "\\")
+				url += "/"
 			
-			var loader:URLLoader = new URLLoader(url);
+			url += "0.txt";
+			
+			var loader:URLLoader = new URLLoader(new URLRequest(url));
 			loader.dataFormat = URLLoaderDataFormat.BINARY;
 			loader.addEventListener(Event.COMPLETE,loadDatFileCompleteHandler);
 			
@@ -93,13 +96,16 @@ package fnscriper
 			this.runner.startGame();
 		}
 		
-		public function loadFontFile(url:URLRequest = null):void
+		public function loadFontFile():void
 		{
-			if (!url)
-				url = new URLRequest("default.swf");
+			var url:String = gameurl;
+			if (url && url.charAt(url.length - 1) != "/" && url.charAt(url.length - 1) != "\\")
+				url += "/"
+			
+			url += "default.swf";
 			
 			var loader:Loader = new Loader();
-			loader.load(url,new LoaderContext(false,ApplicationDomain.currentDomain))
+			loader.load(new URLRequest(url),new LoaderContext(false,ApplicationDomain.currentDomain))
 			loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadFontFileCompleteHandler);
 		}
 		
