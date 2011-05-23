@@ -262,6 +262,11 @@ package fnscriper
 		 */
 		public var imgscale:Number = 1.0;
 		
+		/**
+		 * 执行getspsize是否中断游戏
+		 */
+		public var getspsizewait:int;
+		
 		public function setVar(key:String,v:Object):void
 		{
 			var type:String = key.charAt(0);

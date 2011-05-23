@@ -21,7 +21,7 @@ package fnscriper
 	{
 		static public var instance:FNSFacade;
 		
-		public var charset:String = "utf-8";//gb2312
+		public var charset:String = "gb2312";
 		public var gameurl:String = "";
 		
 		public var asset:FNSAsset;

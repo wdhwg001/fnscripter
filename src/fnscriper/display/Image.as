@@ -47,6 +47,7 @@ package fnscriper.display
 		public var transparenceMode:String;
 		public var animLength:int = 1;
 		public var animFrameTime:int;
+		public var isLoading:Boolean;
 		private var _animMode:int = 3;
 		
 		public function get view():FNSView
@@ -208,6 +209,7 @@ package fnscriper.display
 			else
 			{
 				_cellIndex = -1;
+				isLoading = true;
 				
 				loader = new Loader();
 				loader.load(FNSFacade.instance.asset.getURLRequest(v));
@@ -217,6 +219,7 @@ package fnscriper.display
 		}
 		private function loadCompleteHandler(event:Event):void
 		{
+			isLoading = false;
 			if (!loader.content)
 				return;
 				
@@ -244,6 +247,8 @@ package fnscriper.display
 			this.cellIndex = 0;
 			this.autoScale();
 			this.autoLayout();
+			
+			dispatchEvent(new Event(Event.COMPLETE));
 		}
 		
 		public function loadRect(w:int,h:int,c:uint):void
@@ -290,10 +295,15 @@ package fnscriper.display
 			else
 			{
 				_cellIndex = -1;
+				isLoading = true;
 				btndef.contentLoaderInfo.addEventListener(Event.COMPLETE,completeHandler);
 			}
 			function completeHandler(e:Event):void
 			{
+				isLoading = false;
+				if (!loader.content)
+					return;
+				
 				var bmd:BitmapData = (btndef.content as Bitmap).bitmapData;
 				var bmd1:BitmapData = new BitmapData(w,h,true,0);
 				bmd1.copyPixels(bmd,new Rectangle(x,y,w,h),new Point());
@@ -306,6 +316,7 @@ package fnscriper.display
 				
 				autoScale();
 				autoLayout();
+				dispatchEvent(new Event(Event.COMPLETE));
 			}
 		}
 		
@@ -320,10 +331,15 @@ package fnscriper.display
 			else
 			{
 				_cellIndex = -1;
+				isLoading = true;
 				btndef.contentLoaderInfo.addEventListener(Event.COMPLETE,completeHandler);
 			}
 			function completeHandler(e:Event):void
 			{
+				isLoading = false;
+				if (!btndef.content)
+					return;
+					
 				var source:BitmapData = (btndef.content as Bitmap).bitmapData;
 				var bmd:BitmapData = new BitmapData(w,h,true,0);
 				bmd.copyPixels(source,new Rectangle(sx,sy,sw,sh),new Point());
@@ -337,6 +353,8 @@ package fnscriper.display
 				height = h;
 				
 				autoLayout();
+				
+				dispatchEvent(new Event(Event.COMPLETE));
 			}
 		}
 		

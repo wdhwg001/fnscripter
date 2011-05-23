@@ -228,5 +228,11 @@ package fnscriper.command
 		{
 			model.imgscale = 1 / 360 * 800;
 		}
+		
+		[CMD("S")]
+		public function getversion(key:String):void
+		{
+			model.setVar(key,"1.0.0");
+		}
 	}
 }

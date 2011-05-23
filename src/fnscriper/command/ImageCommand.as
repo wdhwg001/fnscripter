@@ -1,5 +1,7 @@
 package fnscriper.command
 {
+	import flash.events.Event;
+	
 	import fnscriper.display.Image;
 	import fnscriper.util.FNSUtil;
 
@@ -264,8 +266,28 @@ package fnscriper.command
 			if (!v)
 				return;
 			
-			model.setVar(wField,v.width);
-			model.setVar(hField,v.height);
+			if (v.isLoading && model.getspsizewait == 1)
+			{
+				runner.isWait = true;
+				v.addEventListener(Event.COMPLETE,completeHandler);
+			}
+			else
+			{
+				completeHandler(null);
+			}
+				
+			function completeHandler(e:Event):void
+			{
+				model.setVar(wField,v.width);
+				model.setVar(hField,v.height);
+				
+				runner.isWait = false;
+			}
+		}
+		
+		public function getspsizewait(v:int):void
+		{
+			model.getspsizewait = v;
 		}
 		
 		public function avi(v:String,haltable:int = 0):void
