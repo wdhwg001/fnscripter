@@ -273,7 +273,8 @@ package fnscriper.command
 			}
 			else
 			{
-				completeHandler(null);
+				model.setVar(wField,v.width);
+				model.setVar(hField,v.height);
 			}
 				
 			function completeHandler(e:Event):void
@@ -282,6 +283,7 @@ package fnscriper.command
 				model.setVar(hField,v.height);
 				
 				runner.isWait = false;
+				runner.doNext();
 			}
 		}
 		
