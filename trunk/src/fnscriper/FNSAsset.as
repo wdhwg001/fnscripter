@@ -81,7 +81,7 @@ package fnscriper
 			refreshIndex();
 			do 
 			{
-				if (endIndex >= runner.data.length - 1 || endIndex - startIndex > MAX_LOAD)
+				if (endIndex + 1 >= runner.data.length || endIndex - startIndex > MAX_LOAD)
 				{
 					this.paused = true;
 					return;
@@ -89,21 +89,24 @@ package fnscriper
 				
 				endIndex++;
 				
-				var line:String = FNSUtil.readLine(runner.data[endIndex]);
-				var list:Array = line.match(/".+?"/);
-				var result:Array = [];
-				if (list)
+				var lines:Array = runner.data[endIndex];
+				for each (var line:String in lines)
 				{
-					for (var i:int = 0;i < list.length;i++)
+					var list:Array = line.match(/".+?"/);
+					var result:Array = [];
+					if (list)
 					{
-						var v:String = list[i];
-						v = v.slice(1,v.length - 1);
-						var index:int = v.indexOf(";");
-						if (index != -1)
-							v = v.slice(index + 1);
-						
-						if (FILENAMES.indexOf(v.slice(v.length - 4,v.length)) != -1)
-							result.push(v);
+						for (var i:int = 0;i < list.length;i++)
+						{
+							var v:String = list[i];
+							v = v.slice(1,v.length - 1);
+							var index:int = v.indexOf(";");
+							if (index != -1)
+								v = v.slice(index + 1);
+							
+							if (FILENAMES.indexOf(v.slice(v.length - 4,v.length)) != -1)
+								result.push(v);
+						}
 					}
 				}
 			}
@@ -115,6 +118,7 @@ package fnscriper
 		private function pLoad(urls:Array):void
 		{
 			var total:int = urls.length;
+//			trace(urls);
 			
 			for each (var url:String in urls)
 			{

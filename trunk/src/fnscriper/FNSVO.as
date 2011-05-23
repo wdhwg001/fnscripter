@@ -49,7 +49,7 @@ package fnscriper
 		/**
 		 * 循环堆
 		 */
-		public var forStack:Array = [];//{step,param,end,forstep}
+		public var forStack:Array = [];//{step,step2,param,end,forstep}
 		
 		/**
 		 * 字体 
