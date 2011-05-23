@@ -102,7 +102,12 @@ package fnscriper.display
 
 		public function set source(value:String):void
 		{
+			if (_source == value)
+				return;
+			
 			_source = value;
+			this.scaleX = this.scaleY = 1.0;
+			
 			if (_source.charAt(0) == ":")
 			{
 				var arr:Array = value.slice(1).split(";");
