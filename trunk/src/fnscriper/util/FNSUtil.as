@@ -136,6 +136,13 @@ package fnscriper.util
 		
 		public static function createSound(url:String,bufferTime:int = 1000):Sound
 		{
+			if (url && url.charAt(0) == "*")
+			{
+				var num:String = int(url.slice(1)).toString();
+				if (num.length == 1)
+					num = "0" + num;
+				url = "cd\Track" + num + ".mp3";
+			}
 			return new Sound(FNSFacade.instance.asset.getURLRequest(url),new SoundLoaderContext(bufferTime));
 		}
 		
