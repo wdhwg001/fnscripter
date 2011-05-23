@@ -285,7 +285,7 @@ package fnscriper.command
 			}
 		}
 		
-		public function getspsizewait(v:int):void
+		public function getspsizewait(v:int = 1):void
 		{
 			model.getspsizewait = v;
 		}
