@@ -127,19 +127,13 @@ package fnscriper
 		{
 			v = v.replace(/\/\r?\n/,"");
 			data = v.split(/\r?\n/);
-			initData();
-		}
-		
-		protected function initData():void
-		{
 			for (var i:int = 0;i < data.length;i++)
 			{
 				var line:String = FNSUtil.readLine(data[i]);
 				if (line.charAt(0) == "*")
-				{
-					var value:String = line.slice(1);
-					labels[value] = i;
-				}
+					labels[line.slice(1)] = i;
+				
+				data[i] = FNSUtil.split(line,":");
 			}
 		}
 		
@@ -147,68 +141,69 @@ package fnscriper
 		{
 			FNSFacade.instance.asset.startLoad();
 			
-			var origin:String = FNSUtil.readLine(data[model.step]);
-			trace(origin);
-			var lines:Array = FNSUtil.split(origin,":");
-			while (model.step2 < lines.length)
+			var lines:Array = data[model.step];
+			var line:String = lines[model.step2];
+//			trace(line);
+			if (line.length && line.charAt(0) != "*" && line.charAt(0) != "~")
 			{
-				var line:String = lines[model.step2];
-				if (line.length && line.charAt(0) != "*" && line.charAt(0) != "~")
+				if (line.slice(0,3) == "if ") //条件判断
 				{
-					if (line.slice(0,3) == "if ") //条件判断
+					var ifBody:String = getIfBody(line);
+					if (FNSUtil.decodeNumber(ifBody,false))
 					{
-						var ifBody:String = getIfBody(line);
-						if (FNSUtil.decodeNumber(ifBody,false))
-							line = line.slice(ifBody.length + 3 + 1);
-						else
-							break;//跳过此行
+						line = line.slice(ifBody.length + 3 + 1);
 					}
-					else if (line.slice(0,6) == "notif ")
+					else
 					{
-						ifBody = getIfBody(line);
-						if (!FNSUtil.decodeNumber(ifBody,false))
-							line = line.slice(ifBody.length + 6 + 1);
-						else
-							break;//跳过此行
-					}
-					else if (line.slice(0,4) == "for ")//循环
-					{
-						forStart(line.slice(4));
-						break;
-					}
-					
-					var arr:Array = FNSUtil.split(line," ");
-					var cmd:String = arr.shift();
-					var value:String = arr.join();
-					if (cmd)
-					{
-						if (commands.hasOwnProperty(cmd))
-						{
-							//指令
-							var params:Array;
-							if (value == "")
-								params = null;
-							else
-								params = decodeParams(cmd,FNSUtil.split(value,","));
-							
-							runCommand(cmd,params);
-							if (cmd == "return")
-								return;
-						}
-						else if (defsubs.hasOwnProperty(cmd))
-						{
-							gosub("*" + cmd,value);
-							break;
-						}
-						else
-						{
-							runCommand("putText",[line]);
-						}
+						model.step2 = lines.length - 1;
+						return;//跳过此行
 					}
 				}
-				model.step2++;
+				else if (line.slice(0,6) == "notif ")
+				{
+					ifBody = getIfBody(line);
+					if (!FNSUtil.decodeNumber(ifBody,false))
+					{
+						line = line.slice(ifBody.length + 6 + 1);
+					}
+					else
+					{
+						model.step2 = lines.length - 1;
+						return;//跳过此行
+					}
+				}
+				else if (line.slice(0,4) == "for ")//循环
+				{
+					forStart(line.slice(4));
+					return;
+				}
+				
+				var arr:Array = FNSUtil.split(line," ");
+				var cmd:String = arr.shift();
+				var value:String = arr.join();
+				if (cmd)
+				{
+					if (commands.hasOwnProperty(cmd))
+					{
+						//指令
+						var params:Array;
+						if (value == "")
+							params = null;
+						else
+							params = decodeParams(cmd,FNSUtil.split(value,","));
+						
+						runCommand(cmd,params);
+					}
+					else if (defsubs.hasOwnProperty(cmd))
+					{
+						gosub("*" + cmd,value);
+					}
+					else
+					{
+						runCommand("putText",[line]);
+					}
+				}
 			}
-			model.step2 = 0;
 		}
 		
 		public function runCommand(cmd:String,params:Array = null):void
@@ -251,9 +246,17 @@ package fnscriper
 		
 		public function doNext():void
 		{
-			while (!isWait && !isTextWait && model.step < data.length - 1)
+			while (!isWait && !isTextWait)
 			{
-				model.step++;
+				model.step2++;
+				if (model.step2 >= data[model.step].length)
+				{
+					model.step++;
+					model.step2 = 0;
+				}
+				if (model.step >= data.length)
+					return;
+				
 				run();
 			}
 		}
@@ -283,8 +286,6 @@ package fnscriper
 			var o:Object = model.callStack.pop();
 			model.step = o.step;
 			model.step2 = o.step2;
-			model.step--;
-			model.step2++;
 		}
 		
 		
@@ -320,7 +321,7 @@ package fnscriper
 			var start:int = int(FNSUtil.decodeNumber(arr[1]));
 			
 			model.setVar(param,start);
-			model.forStack.push({step:model.step,param:param,end:end,forstep:forstep});
+			model.forStack.push({step:model.step,step2:model.step2,param:param,end:end,forstep:forstep});
 		}
 		
 		public function fornext():void
@@ -333,6 +334,7 @@ package fnscriper
 			{
 				model.setVar(params.param,index + int(forstep));
 				model.step = params.step;
+				model.step2 = params.step2;
 			}
 			else
 			{
@@ -347,11 +349,15 @@ package fnscriper
 			do
 			{
 				model.step++;
-				var line:String = FNSUtil.readLine(data[model.step]);
-				if (line.slice(0,4) == "for ")
-					depth++;
-				if (line == "next")
-					depth--;
+				model.step2 = 0;
+				var lines:Array = data[model.step];
+				for (var line:String in lines)
+				{
+					if (line.slice(0,4) == "for ")
+						depth++;
+					if (line == "next")
+						depth--;
+				}
 			}
 			while (depth > 0);
 		}
@@ -359,6 +365,7 @@ package fnscriper
 		public function goto(v:String):void
 		{
 			model.step = int(labels[v.toString().slice(1)]);
+			model.step2 = 0;
 		}
 		
 		public function game():void
@@ -369,23 +376,26 @@ package fnscriper
 		public function skip(v:int):void
 		{
 			model.step += v;
+			model.step2 = 0;
 		}
 		
 		public function jumpf():void
 		{
+			model.step2 = 0;
 			do
 			{
 				model.step--
 			}
-			while (data[model.step].toString().charAt(0) == "~");
+			while (model.step >= 0 && data[model.step][0] && data[model.step][0].charAt(0) == "~");
 		}
 		public function jumpb():void
 		{
+			model.step2 = 0;
 			do
 			{
 				model.step++
 			}
-			while (data[model.step].toString().charAt(0) == "~");
+			while (model.step < data.length && data[model.step][0] && data[model.step][0].charAt(0) == "~");
 		}
 		
 		public function reset():void
