@@ -1,0 +1,1 @@
+必须在编译参数加上-keep-as3-metadata+=CMD才能正常编译
