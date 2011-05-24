@@ -124,9 +124,9 @@ package fnscriper.command
 		 * @param url
 		 * 
 		 */
-		public function lsph(index:String,url:String):void
+		public function lsph(index:String,url:String,x:int = 0,y:int = 0,alpha:int = 100):void
 		{
-			lsp(index,url);
+			lsp(index,url,x,y,alpha);
 			vsp(index,0);
 		}
 		
@@ -196,10 +196,10 @@ package fnscriper.command
 		{
 			var start:int = 0;
 			var end:int = 1;
-			while (end < v.length)
+			while (end <= v.length)
 			{
 				var ch:String = v.charAt(end);
-				if (ch == "C" || ch == "P" || end == v.length - 1)
+				if (ch == "C" || ch == "P" || end == v.length)
 				{
 					var cmd:String = v.charAt(start);
 					var params:Array = v.slice(start + 1,end).split(",");
@@ -213,6 +213,7 @@ package fnscriper.command
 					}
 					start = end;
 				}
+				end++;
 			}
 		}
 		

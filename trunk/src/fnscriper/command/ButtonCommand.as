@@ -1,6 +1,10 @@
 package fnscriper.command
 {	
+	import flash.utils.getTimer;
+	import flash.utils.setTimeout;
+	
 	import fnscriper.events.ViewEvent;
+
 	public class ButtonCommand extends CommandBase
 	{
 		[CMD("S")]
@@ -10,14 +14,20 @@ package fnscriper.command
 			runner.isWait = runner.isBtnMode = true;
 			view.addViewHandler(completeHandler);
 			
-			function completeHandler(e:ViewEvent):void
+			model.getbtntimer = getTimer();
+			
+			if (model.btntimer)
+				setTimeout(completeHandler,model.btntimer);
+			
+			function completeHandler(e:ViewEvent = null):void
 			{
-				if (e.btnIndex == -1 || !runner.isWait)
+				if (e && e.btnIndex == -1)
 					return;
 				
+				model.btntimer = 0;
 				view.removeViewHandler(completeHandler);
 				
-				model.setVar(v,e.btnIndex);
+				model.setVar(v,e ? e.btnIndex : -1);
 				if (isClear)
 					btnclear();
 				
@@ -30,6 +40,17 @@ package fnscriper.command
 		public function btnwait2(v:String):void
 		{
 			btnwait(v,false);
+		}
+		
+		[CMD("S")]
+		public function getbtntimer(key:String):void
+		{
+			model.setVar(key,getTimer() - model.getbtntimer);
+		}
+		
+		public function btntimer(t:int):void
+		{
+			model.btntimer = t;
 		}
 		
 		/**
@@ -52,6 +73,8 @@ package fnscriper.command
 			model.btndef = "";
 			model.btn = {};
 			model.blt = "";
+			model.exbtn = {};
+			model.exbtn_d = "";
 			view.btnclear();
 		}
 		
@@ -86,6 +109,15 @@ package fnscriper.command
 		public function ofscpy():void
 		{
 			//
+		}
+		
+		public function exbtn(index:int,btnIndex:int,value:String):void
+		{
+			model.exbtn[btnIndex] = {index:index,value:value}
+		}
+		public function exbtn_d(v:String):void
+		{
+			model.exbtn_d = v;
 		}
 	}
 }
