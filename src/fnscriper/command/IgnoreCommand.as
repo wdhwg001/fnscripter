@@ -9,7 +9,7 @@ package fnscriper.command
 		public function globalon(...reg):void{}
 		public function labellog(...reg):void{}
 		public function filelog(...reg):void{}
-//		public function filelog(..reg):void{}
+		public function rubyon(...reg):void{}
 		public function cdfadein(...reg):void{}
 		public function cdfadeout(...reg):void{}
 		public function mp3fadein(...reg):void{}

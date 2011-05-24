@@ -143,7 +143,7 @@ package fnscriper
 			
 			var lines:Array = data[model.step];
 			var line:String = lines[model.step2];
-//			trace(line);
+			trace(line);
 			if (line.length && line.charAt(0) != "*" && line.charAt(0) != "~")
 			{
 				if (line.slice(0,3) == "if ") //条件判断

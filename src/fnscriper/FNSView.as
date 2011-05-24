@@ -121,7 +121,6 @@ package fnscriper
 			
 			addEventListener(Event.ENTER_FRAME,tickHandler);
 			stage.addEventListener(MouseEvent.CLICK,clickHandler);
-			stage.addEventListener(MouseEvent.MOUSE_MOVE,mouseOverHandler);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN,keyDownHandler);
 			stage.addEventListener(KeyboardEvent.KEY_UP,keyUpHandler);
 		}
@@ -140,6 +139,26 @@ package fnscriper
 			{
 				mousecursorimg.visible = false;
 				Mouse.show();
+			}
+			
+			if (facade.runner.isBtnMode)
+			{
+				for (var p:* in btn)
+				{
+					var child:Image = btn[p];
+					if (child)
+						child.cellIndex = child.mouseOver ? 1 : 0;
+				}
+				
+				if (facade.model.exbtn_d)
+					facade.runner.runCommand("spstr",[facade.model.exbtn_d])
+				
+				for each (var o:* in facade.model.exbtn)
+				{
+					child = sp[o.index];
+					if (child.mouseOver)
+						facade.runner.runCommand("spstr",[o.value])
+				}
 			}
 		}
 		
@@ -162,19 +181,6 @@ package fnscriper
 		protected function keyUpHandler(event:KeyboardEvent):void
 		{
 			facade.runner.isSkip = false;
-		}
-		
-		protected function mouseOverHandler(event:MouseEvent):void
-		{
-			if (facade.runner.isBtnMode)
-			{
-				for (var p:* in btn)
-				{
-					var child:Image = btn[p];
-					if (child)
-						child.cellIndex = child.mouseOver ? 1 : 0;
-				}
-			}
 		}
 		
 		protected function clickHandler(event:MouseEvent):void

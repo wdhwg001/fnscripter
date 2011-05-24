@@ -3,8 +3,11 @@ package fnscriper.command
 	import flash.display.StageDisplayState;
 	import flash.events.ContextMenuEvent;
 	import flash.events.Event;
+	import flash.events.IOErrorEvent;
 	import flash.net.FileFilter;
 	import flash.net.FileReference;
+	import flash.net.URLLoader;
+	import flash.net.URLRequest;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.utils.ByteArray;
@@ -14,6 +17,7 @@ package fnscriper.command
 	import flashx.textLayout.elements.BreakElement;
 	
 	import fnscriper.FNSFacade;
+	import fnscriper.util.FNSUtil;
 
 	public class SystemCommand extends CommandBase
 	{
@@ -162,6 +166,31 @@ package fnscriper.command
 			model.timer = getTimer();
 		}
 		
+		[CMD("S")]
+		public function fileexist(key:String,url:String):void
+		{
+			runner.isSkip = true;
+			
+			var loader:URLLoader = new URLLoader(asset.getURLRequest(url));
+			loader.addEventListener(Event.COMPLETE,completeHandler);
+			loader.addEventListener(IOErrorEvent.IO_ERROR,completeHandler);
+			
+			function completeHandler(e:Event):void
+			{
+				loader.removeEventListener(Event.COMPLETE,completeHandler);
+				loader.removeEventListener(IOErrorEvent.IO_ERROR,completeHandler);
+				
+				if (e.type == Event.COMPLETE)
+					model.setVar(key,1);
+				else
+					model.setVar(key,0);
+				
+				runner.isSkip = false;
+				runner.doNext();
+			}
+		}
+		
+		
 		public function menu_full():void
 		{
 			view.stage.displayState = StageDisplayState.FULL_SCREEN;
@@ -219,14 +248,24 @@ package fnscriper.command
 			view.mousecursorimg.source = v;
 		}
 		
-		public function mode800(...reg):void
+		public function mode800():void
 		{
 			model.imgscale = 1;
 		}
 		
-		public function mode360(...reg):void
+		public function mode360():void
 		{
 			model.imgscale = 1 / 360 * 800;
+		}
+		
+		public function mode640():void
+		{
+			model.imgscale = 1 / 640 * 800;
+		}
+		
+		public function windowchip(v:int):void
+		{
+			model.windowchip = v;
 		}
 		
 		[CMD("S")]

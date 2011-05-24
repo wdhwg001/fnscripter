@@ -117,6 +117,16 @@ package fnscriper
 		public var btn:Object = {};//{x,y,w,h,ox,oy};或者图片id
 		
 		/**
+		 * 选中时候状态按钮
+		 */
+		public var exbtn:Object = {};//{index,value};
+		
+		/**
+		 * 未选中时状态 
+		 */
+		public var exbtn_d:String = "";
+		
+		/**
 		 * 快速显示图片 
 		 */
 		public var blt:Object = {};//{x,y,w,h,sx,sy,sw,sh};显示区域左上角x坐标,y坐标,显示区域宽,高,预载图像截取左上角x坐标,y坐标,截取部分宽,高
@@ -125,6 +135,16 @@ package fnscriper
 		 * 按钮预载图片
 		 */
 		public var btndef:String = "";
+		
+		/**
+		 * 按钮计时 
+		 */
+		public var getbtntimer:int = 0;
+		
+		/**
+		 * BTN状态持续限制时间
+		 */
+		public var btntimer:int;
 		
 		/**
 		 * 文本是否显示
@@ -266,6 +286,11 @@ package fnscriper
 		 * 执行getspsize是否中断游戏
 		 */
 		public var getspsizewait:int;
+		
+		/**
+		 * ???
+		 */
+		public var windowchip:int;
 		
 		public function setVar(key:String,v:Object):void
 		{
