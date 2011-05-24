@@ -104,7 +104,7 @@ package fnscriper
 			var menu:ContextMenu = new ContextMenu();
 			menu.hideBuiltInItems();
 			var menuItem:ContextMenuItem = new ContextMenuItem("FNScripter 1.0.0");
-			menuItem.addEventListener(ContextMenuEvent.MENU_SELECT,copyrightHandler);
+			menuItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,copyrightHandler);
 			menu.customItems = [menuItem];
 			this.contextMenu = menu;
 			
