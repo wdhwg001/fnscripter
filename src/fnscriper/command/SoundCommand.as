@@ -8,9 +8,16 @@ package fnscriper.command
 	import flash.net.URLRequest;
 	
 	import fnscriper.util.FNSUtil;
+	
+	import fnscriper.FNSFacade;
 
 	public class SoundCommand extends CommandBase
 	{
+		public function SoundCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		public function defvoicecol(v:int):void
 		{
 			model.defvoicecol = v;

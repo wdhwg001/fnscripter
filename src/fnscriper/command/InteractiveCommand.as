@@ -8,9 +8,16 @@ package fnscriper.command
 	import fnscriper.display.Image;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
+	
+	import fnscriper.FNSFacade;
 
 	public class InteractiveCommand extends CommandBase
 	{
+		public function InteractiveCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		public function waittimer(v:int):void
 		{
 			wait(v);

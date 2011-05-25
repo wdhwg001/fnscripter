@@ -1,7 +1,14 @@
 package fnscriper.command
 {
+	
+	
+	import fnscriper.FNSFacade;
 	public class EffectCommand extends CommandBase
 	{
+		public function EffectCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
 		public function effect(index:int,effect:int,len:int = 1000,img:String = ""):void
 		{
 			model.effect[index] = effect;

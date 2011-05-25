@@ -6,9 +6,16 @@ package fnscriper.command
 	
 	import fnscriper.display.Image;
 	import fnscriper.events.ViewEvent;
+	
+	import fnscriper.FNSFacade;
 
 	public class TextCommand extends CommandBase
 	{
+		public function TextCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		public function defaultspeed(low:int,middle:int,high:int):void
 		{
 			model.defaultspeed = [low,middle,high];

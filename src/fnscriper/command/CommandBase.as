@@ -8,29 +8,31 @@ package fnscriper.command
 
 	public class CommandBase
 	{
-		public function get asset():FNSAsset
+		private var facade:FNSFacade;
+		
+		public function CommandBase(facade:FNSFacade):void
 		{
-			return FNSFacade.instance.asset; 
+			this.facade = facade;
 		}
 		
-		public function get facade():FNSFacade
+		public function get asset():FNSAsset
 		{
-			return FNSFacade.instance;
+			return facade.asset; 
 		}
 		
 		public function get model():FNSVO
 		{
-			return FNSFacade.instance.model;
+			return facade.model;
 		}
 		
 		public function get runner():FNSRunner
 		{
-			return FNSFacade.instance.runner;
+			return facade.runner;
 		}
 		
 		public function get view():FNSView
 		{
-			return FNSFacade.instance.view;
+			return facade.view;
 		}
 	}
 }

@@ -10,6 +10,11 @@ package fnscriper.command
 
 	public class DataCommand extends CommandBase
 	{
+		public function DataCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		[CMD("S")]
 		public function stralias(key:String,value:String):void
 		{

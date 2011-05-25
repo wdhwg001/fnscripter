@@ -12,6 +12,7 @@ package fnscriper
 	import flash.events.TimerEvent;
 	import flash.filters.BitmapFilter;
 	import flash.filters.ColorMatrixFilter;
+	import flash.filters.DropShadowFilter;
 	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import flash.globalization.Collator;
@@ -71,14 +72,13 @@ package fnscriper
 		private var renderTimer:int;
 		private var refreshDirty:Boolean;
 		
-		public function get facade():FNSFacade
-		{
-			return FNSFacade.instance;
-		}
+		private var facade:FNSFacade;
 		
-		public function FNSView(w:int = 800,h:int = 600)
+		public function FNSView(facade:FNSFacade,w:int = 800,h:int = 600)
 		{
 			super();
+			
+			this.facade = facade;
 			
 			this.contentWidth = w;
 			this.contentHeight = h;
@@ -91,14 +91,14 @@ package fnscriper
 			this.screenbm = new Bitmap(this.screen	,"auto",true);
 			this.addChild(this.screenbm);
 			
-			this.textWindow = new TextWindow();
+			this.textWindow = new TextWindow(facade);
 			this.addChild(this.textWindow)
 			
-			this.background = new Image();
+			this.background = new Image(facade);
 			this.background.transparenceMode = "c";
 			this.background.id = "b";
 			
-			this.mousecursorimg = new Image();
+			this.mousecursorimg = new Image(facade);
 			addChild(this.mousecursorimg);
 			
 			var menu:ContextMenu = new ContextMenu();
@@ -205,8 +205,21 @@ package fnscriper
 		
 		protected function skipHandler(event:TimerEvent):void
 		{
-			if (FNSFacade.instance.runner.isSkip && !facade.runner.isBtnMode)
+			if (facade.runner.isSkip && !facade.runner.isBtnMode)
 				dispatchViewEvent(-1,true);
+		}
+		
+		public function getTextFilter(shadow:Number = NaN):Array
+		{
+			var vo:FNSVO = facade.model;
+			var x:int = vo.shadedistanceX;
+			var y:int = vo.shadedistanceY;
+			if (!isNaN(shadow))
+				x = y = shadow;
+			
+			var l:Number = Math.sqrt(x * x + y * y);
+			var r:Number = Math.atan2(y,x) / Math.PI * 180;
+			return [new DropShadowFilter(l,r,0,0.5,0,0,255)];
 		}
 		
 		public function addViewHandler(e:Function):void
@@ -412,7 +425,7 @@ package fnscriper
 			
 			if (img)
 			{
-				var maskImg:Image = new Image();
+				var maskImg:Image = new Image(facade);
 				maskImg.source = img;
 			}
 			
@@ -520,7 +533,7 @@ package fnscriper
 		
 		public function lsp(index:String,url:String,x:int = 0,y:int = 0,alpha:int = 100):void
 		{
-			var image:Image = new Image();
+			var image:Image = new Image(facade);
 			image.source = url;
 			sp[index] = image;
 			
@@ -560,7 +573,7 @@ package fnscriper
 		
 		public function addBtn(btnIndex:String,o:Object):void
 		{
-			var image:Image = new Image();
+			var image:Image = new Image(facade);
 			image.loadBtndef(btndef,o.x,o.y,o.w,o.h,o.ox,o.oy);
 			spCanvas.push(image);
 			btn[btnIndex] = image;
@@ -571,7 +584,7 @@ package fnscriper
 			if (blt)
 				blt.destory();
 			
-			blt = new Image();
+			blt = new Image(facade);
 			blt.loadBlt(btndef,o.x,o.y,o.w,o.h,o.sx,o.sy,o.sw,o.sh);
 			spCanvas.push(blt);
 		}
@@ -602,7 +615,7 @@ package fnscriper
 		{
 			bgmstop();
 			
-			var sound:Sound = FNSUtil.createSound(url);
+			var sound:Sound = facade.asset.createSound(url);
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			bgmSound = sound;
 			bgmChannel = sound.play(0,loops,new SoundTransform(facade.model.defmp3vol / 100));
@@ -630,7 +643,7 @@ package fnscriper
 		{
 			dwavestop(index);
 			
-			var sound:Sound = FNSUtil.createSound(url,0);
+			var sound:Sound = facade.asset.createSound(url,0);
 			sound.addEventListener(IOErrorEvent.IO_ERROR,ioErrorHandler);
 			dwaveSound[index] = sound;
 		}
@@ -667,7 +680,7 @@ package fnscriper
 		public function mpegplay(url:String,haltable:int):void
 		{
 			var video:GVideo = new GVideo(contentWidth,contentHeight);
-			video.load(FNSFacade.instance.asset.getURLRequest(url).url);
+			video.load(facade.asset.getURLRequest(url).url);
 			video.addEventListener(Event.COMPLETE,completeHandler);
 			addChild(video);
 			
@@ -681,8 +694,8 @@ package fnscriper
 				video.destory();
 				removeChild(video);
 				
-				FNSFacade.instance.runner.isWait = false;
-				FNSFacade.instance.runner.doNext();
+				facade.runner.isWait = false;
+				facade.runner.doNext();
 			}
 		}
 		

@@ -44,106 +44,12 @@ package fnscriper.util
 			return result;
 		}
 		
-		public static function decodeString(v:String):String
-		{
-			var arr:Array = split(v,"+");
-			var result:String = "";
-			for each (var text:String in arr)
-			{
-				if (text.charAt(0) == "\"" && text.charAt(text.length - 1) == "\"")
-					result += text.slice(1,text.length - 1);
-				else if (text.charAt(0) == "$")
-					result += FNSFacade.instance.model.getVar(decodeNumaliasReplace(text)); 
-				else
-					result += decodeStraliasReplace(text);
-			}
-			return result;
-		}
-		
-		public static function decodeNumber(v:String,errorReturnSource:Boolean = true):Object
-		{
-			v = decodeNumaliasReplace(v);
-			var newstr:String = "";
-			var index:int = 0;
-			while (index < v.length)
-			{
-				var ch:String = v.charAt(index);
-				if (ch == "%" || ch == "$" || ch == "?")
-				{
-					var num:String = readNumber(v,index + 1);
-					if (ch == "?")
-						num += readArrayBody(v,index + 1 + num.length)
-					
-					var r:Object = FNSFacade.instance.model.getVar(ch + num);
-					if (r)
-						newstr += r.toString();
-					index += num.length + 1;
-				}
-				else
-				{
-					newstr += ch;
-					index++;
-				}
-			}
-			
-			var result:Number = OperatorUtil.exec(newstr);
-			if (isNaN(result))
-				return errorReturnSource ? v : NaN;
-			else
-				return result;
-		}
-		
-		public static function decodeNumaliasReplace(v:String):String
-		{
-			var result:String = v;
-			var numalias:Object = FNSFacade.instance.runner.numalias;
-			for (var p:String in numalias)
-				result = result.replace(new RegExp("\\b" + p + "\\b","g"),numalias[p]);
-			
-			return result;
-		}
-		
-		public static function decodeStraliasReplace(v:String):String
-		{
-			var result:String = v;
-			var stralias:Object = FNSFacade.instance.runner.stralias;
-			for (var p:String in stralias)
-				result = result.replace(new RegExp("\\b" + p + "\\b","g"),stralias[p]);
-			
-			return result;
-		}
-		
-		public static function getTextFilter(shadow:Number = NaN):Array
-		{
-			var vo:FNSVO = FNSFacade.instance.model;
-			var x:int = vo.shadedistanceX;
-			var y:int = vo.shadedistanceY;
-			if (!isNaN(shadow))
-				x = y = shadow;
-			
-			var l:Number = Math.sqrt(x * x + y * y);
-			var r:Number = Math.atan2(y,x) / Math.PI * 180;
-			return [new DropShadowFilter(l,r,0,0.5,0,0,255)];
-		}
-		
 		public static function createTextFormat(o:Object):TextFormat
 		{
 			var tf:TextFormat = new TextFormat();
 			for (var p:String in o)
 				tf[p] = o[p];
 			return tf;
-		}
-		
-		public static function createSound(url:String,bufferTime:int = 1000):Sound
-		{
-			if (url && url.charAt(0) == "*")
-			{
-				var num:String = int(url.slice(1)).toString();
-				if (num.length == 1)
-					num = "0" + num;
-				url = "cd\Track" + num + ".mp3";
-			}
-			return new Sound(FNSFacade.instance.asset.getURLRequest(url),new SoundLoaderContext(bufferTime));
 		}
 		
 		public static function readNumber(s:String,startIndex:int):String
@@ -159,7 +65,7 @@ package fnscriper.util
 			return result;
 		}
 		
-		private static function readArrayBody(s:String,startIndex:int):String
+		public static function readArrayBody(s:String,startIndex:int):String
 		{
 			var index:int = startIndex;
 			while (index < s.length)

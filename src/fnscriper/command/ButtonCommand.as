@@ -3,10 +3,16 @@ package fnscriper.command
 	import flash.utils.getTimer;
 	import flash.utils.setTimeout;
 	
+	import fnscriper.FNSFacade;
 	import fnscriper.events.ViewEvent;
 
 	public class ButtonCommand extends CommandBase
 	{
+		public function ButtonCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		[CMD("S")]
 		public function btnwait(v:String,isClear:Boolean = true):void
 		{

@@ -22,6 +22,7 @@ package fnscriper.display
 	import fnscriper.FNSFacade;
 	import fnscriper.FNSRunner;
 	import fnscriper.FNSVO;
+	import fnscriper.FNSView;
 	import fnscriper.events.ViewEvent;
 	import fnscriper.util.FNSUtil;
 	
@@ -42,19 +43,23 @@ package fnscriper.display
 		private var isNewPage:Boolean;
 		private var isIgnoreClickStr:Boolean;
 		
-		public function get facade():FNSFacade
-		{
-			return FNSFacade.instance;
-		}
+		private var facade:FNSFacade;
 		
 		public function get model():FNSVO
 		{
-			return FNSFacade.instance.model;
+			return facade.model;
 		}
 		
-		public function TextWindow()
+		public function get view():FNSView
 		{
-			this.background = new Image();
+			return facade.view;
+		}
+		
+		public function TextWindow(facade:FNSFacade)
+		{
+			this.facade = facade;
+			
+			this.background = new Image(facade);
 			this.addChild(this.background);
 			
 			this.textField = new TextField();
@@ -63,7 +68,7 @@ package fnscriper.display
 			this.textField.defaultTextFormat = new TextFormat(facade.model.defaultfont,12,0xFFFFFF);
 			this.addChild(this.textField);
 			
-			this.cursorimg = new Image();
+			this.cursorimg = new Image(facade);
 			this.addChild(this.cursorimg);
 			
 			this.addEventListener(Event.ADDED_TO_STAGE,init);
@@ -239,7 +244,7 @@ package fnscriper.display
 					{
 						tween();
 						if (model.clickvoice[0])
-							FNSUtil.createSound(model.clickvoice[0],0).play();
+							facade.asset.createSound(model.clickvoice[0],0).play();
 					}
 					else
 					{
@@ -247,7 +252,7 @@ package fnscriper.display
 						facade.runner.doNext();
 						
 						if (model.clickvoice[1])
-							FNSUtil.createSound(model.clickvoice[1],0).play();
+							facade.asset.createSound(model.clickvoice[1],0).play();
 					}
 				}
 			}
@@ -263,7 +268,7 @@ package fnscriper.display
 			tf.leading = data.lg;
 			tf.letterSpacing = data.fg;
 			textField.defaultTextFormat = tf;
-			textField.filters = FNSUtil.getTextFilter(data.shadow);
+			textField.filters = facade.view.getTextFilter(data.shadow);
 			
 			facade.model.textspeed = data.speed;
 			this.setSkin(data.skin,data.wx,data.wy,data.wr,data.wb);
