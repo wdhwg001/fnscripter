@@ -50,13 +50,14 @@ package fnscriper.display
 		public var isLoading:Boolean;
 		private var _animMode:int = 3;
 		
+		private var facade:FNSFacade;
 		public function get view():FNSView
 		{
-			return FNSFacade.instance.view;
+			return facade.view;
 		}
-		public function get facade():FNSFacade
+		public function get model():FNSVO
 		{
-			return FNSFacade.instance;
+			return facade.model;
 		}
 
 		/**
@@ -179,10 +180,11 @@ package fnscriper.display
 			view.invalidateRender();
 		}
 					
-		public function Image()
+		public function Image(facade:FNSFacade)
 		{
 			super();
-			this.transparenceMode = FNSFacade.instance.model.transmode.charAt(0);
+			this.facade = facade;
+			this.transparenceMode = facade.model.transmode.charAt(0);
 		}
 		
 		private var loader:Loader;
@@ -209,7 +211,7 @@ package fnscriper.display
 			
 			if (v.charAt(0) == "#")
 			{
-				loadRect(FNSFacade.instance.view.contentWidth,FNSFacade.instance.view.contentHeight,parseInt(v.slice(1),16));
+				loadRect(view.contentWidth,view.contentHeight,parseInt(v.slice(1),16));
 			}
 			else
 			{
@@ -217,7 +219,7 @@ package fnscriper.display
 				isLoading = true;
 				
 				loader = new Loader();
-				loader.load(FNSFacade.instance.asset.getURLRequest(v));
+				loader.load(facade.asset.getURLRequest(v));
 				loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,loadCompleteHandler);
 				loader.contentLoaderInfo.addEventListener(Event.COMPLETE,loadCompleteHandler);
 			}
@@ -275,11 +277,11 @@ package fnscriper.display
 			for (var i:int = 0;i < animLength;i++)
 			{
 				var textField:TextField = new TextField();
-				textField.defaultTextFormat = new TextFormat(FNSFacade.instance.model.defaultfont,fontWidth,i == 0 ? color : color2);
+				textField.defaultTextFormat = new TextFormat(model.defaultfont,fontWidth,i == 0 ? color : color2);
 				textField.autoSize = TextFieldAutoSize.LEFT;
-				textField.embedFonts = FNSFacade.instance.model.embedFonts;
+				textField.embedFonts = model.embedFonts;
 				textField.text = text;
-				textField.filters = FNSUtil.getTextFilter();
+				textField.filters = facade.view.getTextFilter();
 //				textField.height = fontHeight;
 				var bmd:BitmapData = new BitmapData(textField.textWidth + 3,textField.textHeight + 3,true,0);
 				bmd.draw(textField);
@@ -444,13 +446,13 @@ package fnscriper.display
 		
 		private function autoScale():void
 		{
-			this.scaleX *= facade.model.imgscale;
-			this.scaleY *= facade.model.imgscale; 
+			this.scaleX *= model.imgscale;
+			this.scaleY *= model.imgscale; 
 		}
 		
 		private function autoLayout():void
 		{
-			var underline:int = FNSFacade.instance.model.underline;
+			var underline:int = model.underline;
 			switch (id)
 			{
 				case "l":

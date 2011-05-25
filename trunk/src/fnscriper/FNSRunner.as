@@ -1,6 +1,8 @@
 package fnscriper
 {
 	import flash.display.Sprite;
+	import flash.filters.DropShadowFilter;
+	import flash.media.Sound;
 	import flash.media.SoundChannel;
 	import flash.net.drm.VoucherAccessInfo;
 	import flash.utils.describeType;
@@ -57,18 +59,21 @@ package fnscriper
 		public var isSkip:Boolean;
 		public var isBtnMode:Boolean;
 		
+		private var facade:FNSFacade;
+		
 		public function get model():FNSVO
 		{
-			return FNSFacade.instance.model;
+			return facade.model;
 		}
 		
 		public function get view():FNSView
 		{
-			return FNSFacade.instance.view;
+			return facade.view;
 		}
 			
-		public function FNSRunner()
+		public function FNSRunner(facade:FNSFacade)
 		{
+			this.facade = facade;
 			this.initCommands();
 		}
 		
@@ -87,15 +92,15 @@ package fnscriper
 				"return":subreturn,
 				"reset":reset
 			};
-			regCommand(new IgnoreCommand());
-			regCommand(new DataCommand());
-			regCommand(new InteractiveCommand());
-			regCommand(new ButtonCommand());
-			regCommand(new ImageCommand());
-			regCommand(new SoundCommand());
-			regCommand(new TextCommand());
-			regCommand(new SystemCommand());
-			regCommand(new EffectCommand())
+			regCommand(new IgnoreCommand(facade));
+			regCommand(new DataCommand(facade));
+			regCommand(new InteractiveCommand(facade));
+			regCommand(new ButtonCommand(facade));
+			regCommand(new ImageCommand(facade));
+			regCommand(new SoundCommand(facade));
+			regCommand(new TextCommand(facade));
+			regCommand(new SystemCommand(facade));
+			regCommand(new EffectCommand(facade))
 		}
 	
 		public function regCommand(command:CommandBase):void
@@ -139,7 +144,7 @@ package fnscriper
 		
 		public function run():void
 		{
-			FNSFacade.instance.asset.startLoad();
+			facade.asset.startLoad();
 			
 			var lines:Array = data[model.step];
 			var line:String = lines[model.step2];
@@ -149,7 +154,7 @@ package fnscriper
 				if (line.slice(0,3) == "if ") //条件判断
 				{
 					var ifBody:String = getIfBody(line);
-					if (FNSUtil.decodeNumber(ifBody,false))
+					if (decodeNumber(ifBody,false))
 					{
 						line = line.slice(ifBody.length + 3 + 1);
 					}
@@ -162,7 +167,7 @@ package fnscriper
 				else if (line.slice(0,6) == "notif ")
 				{
 					ifBody = getIfBody(line);
-					if (!FNSUtil.decodeNumber(ifBody,false))
+					if (!decodeNumber(ifBody,false))
 					{
 						line = line.slice(ifBody.length + 6 + 1);
 					}
@@ -223,12 +228,81 @@ package fnscriper
 				if (v.charAt(0) == "*" || v.charAt(0) == "#")
 					result[i] = params[i];
 				else if (cmdParam == "S")
-					result[i] = FNSUtil.decodeStraliasReplace(FNSUtil.decodeNumaliasReplace(params[i]));
+					result[i] = decodeStraliasReplace(decodeNumaliasReplace(params[i]));
 				else if (cmdParam != "N" && (cmdParam == "T" || v.indexOf("\"") != -1 || v.indexOf("$") != -1))/*不准确的判断字符串方式*/
-					result[i] = FNSUtil.decodeString(v);
+					result[i] = decodeString(v);
 				else
-					result[i] = FNSUtil.decodeNumber(v);
+					result[i] = decodeNumber(v);
 			}
+			return result;
+		}
+		
+		public function decodeString(v:String):String
+		{
+			var arr:Array = FNSUtil.split(v,"+");
+			var result:String = "";
+			for each (var text:String in arr)
+			{
+				if (text.charAt(0) == "\"" && text.charAt(text.length - 1) == "\"")
+					result += text.slice(1,text.length - 1);
+				else if (text.charAt(0) == "$")
+					result += model.getVar(decodeNumaliasReplace(text)); 
+				else
+					result += decodeStraliasReplace(text);
+			}
+			return result;
+		}
+		
+		public function decodeNumber(v:String,errorReturnSource:Boolean = true):Object
+		{
+			v = decodeNumaliasReplace(v);
+			var newstr:String = "";
+			var index:int = 0;
+			while (index < v.length)
+			{
+				var ch:String = v.charAt(index);
+				if (ch == "%" || ch == "$" || ch == "?")
+				{
+					var num:String = FNSUtil.readNumber(v,index + 1);
+					if (ch == "?")
+						num += FNSUtil.readArrayBody(v,index + 1 + num.length)
+					
+					var r:Object = model.getVar(ch + num);
+					if (r)
+						newstr += r.toString();
+					index += num.length + 1;
+				}
+				else
+				{
+					newstr += ch;
+					index++;
+				}
+			}
+			
+			var result:Number = OperatorUtil.exec(newstr);
+			if (isNaN(result))
+				return errorReturnSource ? v : NaN;
+			else
+				return result;
+		}
+		
+		public function decodeNumaliasReplace(v:String):String
+		{
+			var result:String = v;
+			var numalias:Object = numalias;
+			for (var p:String in numalias)
+				result = result.replace(new RegExp("\\b" + p + "\\b","g"),numalias[p]);
+			
+			return result;
+		}
+		
+		public function decodeStraliasReplace(v:String):String
+		{
+			var result:String = v;
+			var stralias:Object = stralias;
+			for (var p:String in stralias)
+				result = result.replace(new RegExp("\\b" + p + "\\b","g"),stralias[p]);
+			
 			return result;
 		}
 		
@@ -299,12 +373,12 @@ package fnscriper
 			var arr:Array = v.split(" ");
 			var end:int;
 			var forstep:int = 1;
-			var n:int = int(FNSUtil.decodeNumber(arr.pop()));
+			var n:int = int(decodeNumber(arr.pop()));
 			var sys:String = arr.pop();
 			if (sys == "step")
 			{
 				forstep = n;
-				n = int(FNSUtil.decodeNumber(arr.pop()));
+				n = int(decodeNumber(arr.pop()));
 				sys = arr.pop();
 				if (sys == "to")
 					end = n;
@@ -318,7 +392,7 @@ package fnscriper
 			
 			arr = arr.join().split("=");
 			var param:String = arr[0];
-			var start:int = int(FNSUtil.decodeNumber(arr[1]));
+			var start:int = int(decodeNumber(arr[1]));
 			
 			model.setVar(param,start);
 			model.forStack.push({step:model.step,step2:model.step2,param:param,end:end,forstep:forstep});

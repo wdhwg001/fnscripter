@@ -21,6 +21,11 @@ package fnscriper.command
 
 	public class SystemCommand extends CommandBase
 	{
+		public function SystemCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		/**
 		 * skip -快速略过 
 		 * reset -游戏复位 

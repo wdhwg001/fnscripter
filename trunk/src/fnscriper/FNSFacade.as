@@ -19,8 +19,6 @@ package fnscriper
 
 	public class FNSFacade extends Sprite
 	{
-		static public var instance:FNSFacade;
-		
 		public var charset:String = "gb2312";
 		public var gameurl:String = "";
 		
@@ -30,8 +28,6 @@ package fnscriper
 		public var model:FNSVO;
 		public function FNSFacade()
 		{
-			FNSFacade.instance = this;
-			
 			this.addEventListener(Event.ADDED_TO_STAGE,initHandler);
 		}
 		
@@ -41,13 +37,15 @@ package fnscriper
 			
 			this.loadParams();
 			
-			this.asset = new FNSAsset(gameurl);
+			this.asset = new FNSAsset(this);
+			this.asset.baseurl = gameurl;
+			
 			this.model = new FNSVO();
 			
-			this.view = new FNSView();
+			this.view = new FNSView(this);
 			addChild(this.view);
 			
-			this.runner = new FNSRunner();
+			this.runner = new FNSRunner(this);
 			
 			this.loadDatFile();
 			this.loadFontFile();	

@@ -10,7 +10,7 @@ package fnscriper
 	import flashx.textLayout.elements.BreakElement;
 	
 	import fnscriper.display.Image;
-
+	
 	public class FNSVO
 	{
 		/**

@@ -4,9 +4,16 @@ package fnscriper.command
 	
 	import fnscriper.display.Image;
 	import fnscriper.util.FNSUtil;
-
+	
+	
+	import fnscriper.FNSFacade;
 	public class ImageCommand extends CommandBase
 	{
+		public function ImageCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		public function underline(v:int):void
 		{
 			model.underline = v;

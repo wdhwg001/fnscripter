@@ -1,9 +1,16 @@
 package fnscriper.command
 {
 	import flash.net.drm.VoucherAccessInfo;
+	
+	import fnscriper.FNSFacade;
 
 	public class IgnoreCommand extends CommandBase
 	{
+		public function IgnoreCommand(facade:FNSFacade):void
+		{
+			super(facade);
+		}
+		
 		public function menusetwindow(...reg):void{}
 		public function linepage(...reg):void{}
 		public function globalon(...reg):void{}

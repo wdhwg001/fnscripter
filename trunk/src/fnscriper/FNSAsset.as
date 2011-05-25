@@ -2,6 +2,8 @@ package fnscriper
 {
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
+	import flash.media.Sound;
+	import flash.media.SoundLoaderContext;
 	import flash.net.URLLoader;
 	import flash.net.URLRequest;
 	
@@ -19,19 +21,21 @@ package fnscriper
 		
 		public var paused:Boolean = true;
 		
+		private var facade:FNSFacade;
+		
 		public function get model():FNSVO
 		{
-			return FNSFacade.instance.model;
+			return facade.model;
 		}
 		
 		public function get runner():FNSRunner
 		{
-			return FNSFacade.instance.runner;
+			return facade.runner;
 		}
 		
-		public function FNSAsset(baseurl:String)
+		public function FNSAsset(facade:FNSFacade)
 		{
-			this.baseurl = baseurl;
+			this.facade = facade;
 		}
 		
 		public function getURLRequest(v:String):URLRequest
@@ -53,6 +57,18 @@ package fnscriper
 			}		
 			url += v;
 			return new URLRequest(url.replace(/\\/g,"/"));
+		}
+		
+		public function createSound(url:String,bufferTime:int = 1000):Sound
+		{
+			if (url && url.charAt(0) == "*")
+			{
+				var num:String = int(url.slice(1)).toString();
+				if (num.length == 1)
+					num = "0" + num;
+				url = "cd\Track" + num + ".mp3";
+			}
+			return new Sound(getURLRequest(url),new SoundLoaderContext(bufferTime));
 		}
 		
 		public function startLoad():void
